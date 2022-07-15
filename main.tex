@@ -1,0 +1,3825 @@
+\documentclass[
+  12pt,
+  paper=a4,
+]{scrartcl} % ->
+% -> KOMA.
+%    http://mirrors.ctan.org/macros/latex/contrib/koma-script/doc/scrguien.pdf
+
+\newcommand{\thisdocversion}{\detokenize{2021_10_20_0}}
+
+\input{preamble}
+\input{mymacros}
+
+\newcommand{\studentname}{Juan Antonio Pedreira Martos}
+\title{NUMA11/FMNN01 -- Notes}
+\author{\studentname}
+% \date{September 5, 2021}
+\date{\footnotesize{Version \texttt{\thisdocversion}}}
+% Monkey patching the vertical space...
+\addtokomafont{author}{\vspace*{-0.7em}}
+\addtokomafont{date}{\vspace*{-0.3em}}
+\addtokomafont{title}{\vspace*{-0.5em}} % Affects all
+\addtokomafont{titlehead}{\vspace*{-6em}}
+
+
+
+\begin{document}
+
+% \makeatletter
+% \texttt{\meaning}
+% \makeatother
+
+\maketitle
+\vspace*{-2.5em}
+% \vspace*{-0.5em}
+
+These are my notes for the course ``NUMA11/FMNN01 Numerical Linear Algebra'' taught at Lund University in Autumn 2021 by the professors Claus Führer and Philipp Birken.
+
+\addsec{Preliminaries}
+
+Standard disclaimer: all mistakes/typos are mine. I am not responsible if this document causes any problem and/or scares your cat. Some parts are intentionally not mathematically rigorous for the sake of space and clarity.
+
+I appreciate any constructive criticism/corrections/suggestions.
+
+Conventions: Vectors (1D) are treated as single-column matrices (2D) by default and are always typeset in boldface: $\bm v$. To denote a row vector, use transpose ($\transp$) or Hermitian transpose ($^*$) of a vector.
+
+Acronyms: RHS/LHS means Righ/Left-hand Side of an equation. ``iff'' means ``if and only if''.
+
+\addsec{References}
+
+\begin{itemize}
+    \item {} [Lecture slides here].
+    
+    \item Trefethen, L.\@ N., Bau, D.\@ (1997). \emph{Numerical Linear Algebra}. 1st edition. SIAM. ISBN: 9780898713619.
+    \item Golub, G.\@ H., van Loan, C.\@ F.\@ (2013). \emph{Matrix Computations}. 4th edition. JHU~Press. ISBN: 9781421407944.
+    \item {} [TODO: finish list of references / use bibtex or biblatex]
+\end{itemize}
+
+\newpage
+\addsec{Basic Linear Algebra notions}
+Assumed known concepts: vector space, scalar, vector, dimension, linear combination, span of vectors, basis, collinear vectors, linear in/dependance, vector subspace.%, positive / negative (semi)definite.
+
+\begin{description}
+\item[Matrix:] Sequence of numbers laid out in a ``table'' $A$ of size ${m\times n}$, that is, $m$ rows (vertical vectors, ordered top-to-bottom), by $n$ columns (vertical vectors, ordered left-to-right); $m\cdot n$ entries in total.
+
+These numbers (scalars) can be real $\RR$ or complex $\CC$ (or in any field in general...).
+
+Individual entries are denoted by $a_{ij}$ or (to avoid confusion) $(A)_{i,j}$.
+
+Columns of a matrix $A$ are denoted $\bm a_i$ and rows are denoted $ \bm a_{i,:}\transp \in \RR^{1\times n}$.
+
+The entries $a_{ii}$ ($1 \le i\le \min(m,n)$) form the diagonal of the matrix $A$.
+
+\item[Linear mapping:] a.k.a.\@ linear operator, vector space hom(e)omorphism.
+
+Function $f$ between real (or complex) vector spaces \[\quad f: \RR^m \to \RR^n ;\quad \bm x \mapsto f(\bm x) = \bm y; \quad \bm x \in \RR^m, \, \bm y \in \RR^n .\]
+Must meet linearity requirements:
+\begin{itemize}
+    \item Mapping of the sum is the sum of the mappings: $\bm a + \bm b \mapsto f(\bm a) + f(\bm b)$.
+    \item Scaling of the input maps to the scaling of output (homogeneity): $\alpha\bm a \mapsto \alpha f(\bm a)$; this includes the case $\bm 0\mapsto \bm 0$.
+\end{itemize}
+
+[Pedantic remark: the input or output spaces of a real linear mapping $f$ may not actually be $\RR^m$ or $\RR^n$, but at least they must be \emph{isomorphic} to them; also, we always assume finite-dimensional vector spaces.]
+
+Any output vector $\bm y$ is a linear combination of $n$ vectors (in $\RR^m$) called \emph{columns}; the $n$ coefficients of the linear combination are directly given by the coordinates of the input vector in a given basis.
+
+If we select fixed bases for both the input and output spaces, then this operator is uniquely determined by a matrix that relates the coordinates between spaces and vice~versa: \[
+    A \in\RR^{m\times n} \leftrightarrow  A\bm x = f(\bm x) = \bm y
+\]
+In this case (i.e.\@ given the operator and bases), we can talk about the ``matrix operator'' and ``action of the matrix'' on a vector. And we use then the term ``matrix'' loosely to refer both to the ``linear operator'' and the associated ``table of numbers'' in a given basis. Also the \emph{columns} correspond to the columns of the matrix, of course.
+
+We distinguish between \emph{basis}-independant/-invariant properties of a mapping/matrix (e.g.\@ rank, eigenvalues, etc.) and  \emph{basis}-dependant ones (e.g. entries of $A$, eigenvectors).
+
+Usually, unless otherwise stated, everything is implicitly referred with respect to the ``canonical'' basis (vectors $\bm e_i = (..., 0 , 1, 0, ...)$). The list of coordinates of any vector in the canonical basis is considered the ``absolute'' representation of a that vector (tuple or list of numbers, called ``components'' of the vector).
+
+Moreover, when $m=n$ we usually assume that the input basis is the same as the output basis.
+
+IMPORTANT: the same linear operation on vectors can be described by different matrices (i.e.\@ different ``tables of numbers'') if the basis is changed (typical example: diagonalization).
+
+\item[Square matrix:] Matrix where $m=n$; for any associated mapping, the input and output spaces are the same; the mapping is called \emph{endomorphism}.
+
+$n$ is sometimes called the \emph{order} of the matrix $A$.
+
+Matrices that are not square are called rectangular.
+
+\item[Diagonal matrix:] Matrix where all entries outside the diagonal are zero. (Not necessarily square). Note that this property \emph{does} depend on the basis.
+
+\item[Identity matrix:] Square diagonal matrix $I$, with all ones in the diagonal. When the input and output bases are the same, the associated operator is the identity (input and output vectors are the same).
+
+\item[Zero matrix:] Matrix with all zeros $0\in\RR^{m\times n}$. Zero operator (the output space is the zero vector), absorbing element (multiplying by a zero matrix always results in a zero matrix, of the suitable size), basis-independent property.
+
+\item[Transpose of a matrix:] (a.k.a.\@ transposed matrix) Matrix $A\transp$ that results by exchanging the rows and columns of the ``table'' (like a 2D symmetry with respect to the diagonal).
+\[
+A\in\RR^{m\times n} \implies A\transp\in \RR^{n\times m},\,\,
+(A\transp)_{ij} = a_{ji}
+\]
+For any associated mapping, the input and output spaces are also exchanged as a consequence.
+
+\item[Symmetric matrix:] Matrix $A$ such that $A = A\transp$ (necessarily square).
+
+Main idea: the action performed by the (linear combination of the) columns is the same as the action performed by the rows.
+
+\item[Hermitian transposed matrix:] matrix $A^* = \mathrm{conj}(A\transp)$; it is the matrix  the results from transposition and complex conjugation of $A$.
+
+If $A$ is real, then $A\transp = A^{*}$.
+
+Many results on real symmetric matrices can be generalized by just replacing $A\transp$ with $A^*$.
+
+\item[Hermitian matrix:] Matrix $A$ such that $A = A^*$ (necessarily square).
+
+If $A$ is real symmetric then it is also Hermitian.
+
+Property: the diagonal of $A$ Hermitian must be real.
+
+\item[Inner/dot product:]
+$\displaystyle\bm x^* \bm y =\sum_{i=1}^n \bar x_i^*\, y_i$; if vectors are real: $\displaystyle\bm x\transp \bm y =\sum_{i=1}^n x_i\, y_i$.
+
+Note: this is the ``standard'' inner product (with Gram matrix $G=I$).
+
+\item[Euclidean norm:] (induced by the standard inner product) \[\|\bm x\| = \normtwo{\bm x}= \sqrt{\bm x^* \bm x} = \sqrt{\sum_i |x_i|^2}.\]
+
+This is the norm used ``by-default'' for vectors. It the same as the 2-norm ($p$-norm with $p=2$) (more info in the norm section).
+
+\item[Angle between two vectors:]{} Geometric angle $\alpha_{\bm x,\bm y}$,  between nonzero vector pairs $\bm x,\bm y$.
+
+Defining property: 
+\[\bm x^* \bm y = \normtwo{\bm x}\,\normtwo{\bm y}\,\cos \alpha_{\bm x,\bm y}\]
+
+\item[Unit/Normalized vector:] $\bm x$ is unit vector when $\|\bm x\|=1$.
+
+\item[Matrix-by-vector product:] Application of the matrix operator $A$ on a given vector:
+\[
+A\in\RR^{m\times n},\,\bm x\in \RR^n;\quad A\bm x \in \RR^m
+\]
+
+Can be expressed both as linear combination of columns and as dot products with the rows:
+\begin{align*}
+A\bm x &= 
+    (\bm a_1| \cdots | \bm a_n)\, \bm x=
+     \bm a_1 x_1 + \cdots + \bm a_n x_n=
+    \sum_{j=1}^n \bm a_j x_n
+\\
+A\bm x &=
+\begin{pNiceMatrix}[hlines]
+        \bm a_{1,:}\transp
+    \\
+        \vdots 
+    \\
+        \bm a_{m,:}\transp
+\end{pNiceMatrix}
+\, \bm x
+=
+\begin{pNiceMatrix}[hlines]
+        \bm a_{1,:}\transp \bm x
+    \\
+        \vdots
+    \\
+        \bm a_{m,:}\transp \bm x
+\end{pNiceMatrix}
+\end{align*}
+
+Each entry is the result of a dot product with a row:
+\[
+(A\bm x)_i =
+    \bm a_{i,:}\transp,\bm x
+    =
+    \sum_{k=1}^n a_{ik}\, x_k,
+    \quad
+    i \in \{1,..., m\}
+\]
+
+\item[Matrix-by-matrix product:] Composition of two matrix operations in order.
+
+Intermediate output and input spaces have to match, meaning that: the product $AB$ is defined for $A\in\RR^{m\times n}$, $B\in\RR^{p\times q}$ only when $n=p$; then, the shape of the product matrix $AB$ is $m\times q$.
+
+As a function composition, it has the associative property: $(AB)C = A(BC) = ABC$; parentheses are not needed, because grouping order is not ambiguous.
+
+It can be expressed in terms of matrix-by-vector operations:
+\begin{align*}
+A B = 
+\begin{pNiceMatrix}[vlines]
+    A\, \bm b_1
+    &  \cdots &
+    A\, \bm b_q
+\end{pNiceMatrix}
+&=
+\begin{pNiceMatrix}[vlines]
+        (\bm a_1| ... | \bm a_n)\, \bm b_1
+    & \cdots &
+        (\bm a_1| ... | \bm a_n)\, \bm b_q
+\end{pNiceMatrix}
+\\[10pt]
+&=
+\begin{pNiceMatrix}[vlines]
+    \sum_{k=1}^n \bm a_k b_{k1}
+    & \cdots &
+    \sum_{k=1}^n \bm a_k b_{kq}
+\end{pNiceMatrix}
+\end{align*}
+\begin{align*}
+A B =
+\begin{pNiceMatrix}[hlines]
+    \bm a_{1:}\transp
+    \\ \vdots \\
+    \bm a_{m:}\transp
+\end{pNiceMatrix}
+\begin{pNiceMatrix}[vlines]
+    \bm b_{1}
+    & \cdots &
+    \bm b_{q}
+\end{pNiceMatrix}
+&=
+\begin{pNiceMatrix}[hlines,vlines]
+        \bm a_{1,:}\transp, \bm b_{1}
+    & \cdots &
+        \bm a_{1,:}\transp, \bm b_{q}
+\\
+    \vdots & \ddots & \vdots
+\\
+        \bm a_{m,:}\transp, \bm b_{q}
+    & \cdots &
+        \bm a_{m,:}\transp, \bm b_{q}
+\end{pNiceMatrix}
+\end{align*}
+
+Each matrix entry can be expressed as a row-by-column dot product:
+\[
+    (AB)_{ij}= \bm a_{i,:}\transp, \bm b_j =
+    \sum_{k=1}^n a_{i,k} \, b_{k,j}
+\]
+
+Finally, $AB$ can be also expressed as a sum of column-by-row outer products:
+\[
+AB =
+\begin{pNiceMatrix}[vlines]
+    \bm a_{1}
+    & \cdots &
+    \bm a_{n}
+\end{pNiceMatrix}
+\begin{pNiceMatrix}[hlines]
+    \bm b_{1:}\transp
+    \\ \vdots \\
+    \bm b_{n:}\transp
+\end{pNiceMatrix}
+=
+\sum_{k=1}^{n} \bm a_k \, \bm b_{k:}\transp
+\]
+
+[TODO: I don't like the notation $\bm a_{i,:}\transp$, find something better...]
+
+[TODO: alternative approach using Einstein notation (by understanding this notation, all previous interpretations become obvious).
+
+See: \url{https://ajcr.net/Basic-guide-to-einsum/}
+]
+
+Properties of transposed of a product:
+\begin{itemize}
+    \item $(AB)\transp= B\transp A\transp$
+    \item $(A_1A_2...A_{N-1}A_N)\transp =
+            A_N\transp A_{N-1}\transp...A_2 \transp A_1 \transp$
+    \item same with $(^*)$ instead of $(\transp)$
+\end{itemize}
+
+\item[Permutation matrix:] Square matrix with exactly one $1$ per column (hence, per row), the rest of entries are zeros. It is a ``permutation'' of the identity matrix.
+
+It is used to permute (reorder) the rows or columns of a target matrix $A$:
+\begin{itemize}
+    \item Pre-multiplication permutes the rows of $A$: $PA$.
+    \item Post-multiplication permutes the columns of $A$: $AP$.
+\end{itemize}
+
+Property: permutations are orthogonal ($P^{-1}=P\transp$).
+
+
+\item[Range of a matrix:] $\range(A)$ is the vector space generated by the span of the columns of $A^{m\times n}$. It is a subspace of $\RR^n$. It does not depend on the basis (but the resulting coordinates are dependent).
+
+\item[Rank of a matrix:] Dimension of the range of a matrix, that is, the number of independent columns.
+
+Property: $\rank(A)=\rank(A\transp)$ (row and column ranks are equal).
+
+Property: $\rank(A) \le \min(m, n)$.
+
+The number $\rank(A) - \min(m, n)$ is called \emph{rank deficiency}.
+
+\item[Full rank matrix:] Matrix with the highest possible rank, i.e.\@ $\min(m,n)$; the rank deficiency is zero. It is called full rank by columns if all columns are independent (i.e.\@ rank $n$, only happens with ``tall'' matrices $m\ge n$), and the same by rows (i.e rank $m$, ``fat'' matrices $m\le n$).
+
+If $A$ is square ($m=n$): it is full rank by columns iff it is full rank by rows.
+
+\item[Null space of a linear mapping/matrix:] (a.k.a.\@ kernel).
+
+[...
+
+\phantom{ }    TODO: explain this
+    
+...]
+
+\item[Nullity of a matrix:]
+
+Defined as: $\mathrm{Nullity}(A) = \dim(\Ker(A))$.
+
+Note that the \emph{rank deficiency} is a different concept; but that they result the same when $m\ge n$ (including square matrices).
+
+
+\item[Rank–nullity theorem:] 
+\[
+\rank(A) + \mathrm{Nullity}(A)
+= n
+\]
+($n$ is the number of columns, i.e.\@ the dimension of the input space).
+
+This is a dimension decomposition:
+\[
+\dim(\range(A)) + \dim(\Ker(A))
+= n = \dim(\RR^n)
+\]
+
+
+\item[Inverse matrix:] $A^{-1}\in\RR^{n\times n}$ is the matrix associated with the inverse operator of $A$ (same size); that is, it allows to recover ''all`` possible inputs $\bm x$ from the output $\bm y=A\bm x$ by just applying it: $A^{-1}\bm y = A^{-1} A\bm x = \bm x$. $A A^{-1} = I$
+
+$A^{-1}$ exists iff $A$ is full rank (then $A$ is called \emph{invertible}). If $A^{-1}$ exists it is unique. Invertibility of $A$ is a basis-invariant property.
+
+Inverse of product property: $(AB)^{-1} = B^{-1}A^{-1}$, given $A$ and $B$ invertible.
+
+\item[Singular matrix:] Square matrix that has no inverse (basis-invariant property).
+
+The operator is non-bijective: for a given output $\bm y$ there may be zero (non-surjective) or multiple (non-injective) corresponding inputs $\bm x$.
+
+An invertible matrix is also called regular.
+
+\item[Property:] multiplication by invertible matrix preserves rank (and deficiency).
+
+In particular: for $B$ invertible ($A$ might not be square)
+\[\boxed{\rank(A) = \rank(AB) = \rank(BA)}\]
+Proof:
+\[
+\bm x\in \Ker(A) \implies A\bm x=\bm 0 \implies B A \bm x = \bm 0 \implies \bm x\in \Ker(BA)
+\]
+Conversely, $B$ is invertible, then $\Ker(B) = \{\bm 0\}$.
+\[ B\bm y = \bm 0 \implies \bm y = \bm 0 \]
+Then:
+\[\bm x \in \Ker(BA) \implies BA\bm x = \bm 0 \implies B\underbrace{(A\bm x)}_{\bm y} = \bm 0 \implies (A\bm x) = \bm 0 \implies \bm x \in \Ker(A) \]
+
+[Shorter proof: $B A\bm x = \bm 0 \implies B^{-1}B A\bm x = B^{-1} \bm 0 \implies A\bm x = \bm 0$]
+
+So, the deficiencies are the same and then $\rank(A) = \rank(BA)$.
+
+Same argument with rows (premultiply by $\bm x\transp$): $\rank(A) = \rank(AB)$.
+
+\item[Coordinates of a vector in a basis:] list of scalar coefficients used to (uniquely) represent a given vector as the linear combination of the vectors of a given basis.
+
+\item[Change of basis:] change of representation as coordinates of a vector from a given basis into another.
+
+An invertible (square) matrix uniquely represents a change of basis: if $A\bm x = \bm b$ with $A$ square has only one solution, we can interpret $\bm b$ as a vector (assume canonical basis for simplicity), and then $\bm x$ contains the coordinates in the basis defined by the columns of $A$.
+
+\item[Similar matrices:] Two square matrices $A,\,B$ are called similar when there exists an invertible matrix $P$ such that $B= P^{-1}\, A\, P$.
+
+Similarity defines an IMPORTANT equivalence relation: two similar matrices correspond to the same square mapping (endomorphism) under different bases, being $P$ the change of basis matrix. The pre- and post-multiplication correspond to the forward/inverse change of basis to/from the output/input spaces.
+
+[Recall that we assume that for square matrices, the input and output spaces are referred to the same basis.]
+
+When two square matrices are similar they share:
+\begin{itemize}
+    \item the rank
+    \item the characteristic polynomial $\chi_A(\lambda)$
+    \item the eigenvalues $\lambda_i$
+    \item the eigenvectors (note though, that the coordinate representation changes as the basis is changed).
+    \item the eigenvalue multiplicities: $\mu_a(\lambda_i)$ and $\mu_g(\lambda_i)$
+    \item the trace and the determinant
+    \item in general, all the properties that are basis-invariant
+    \item if $A$ is Hermitian (/real symmetric) then $B$ is not in general also Hermitian, but this is guaranteed when $P$ is unitary (/orthogonal).
+\end{itemize}
+
+\item[System of linear equations:] $A\bm x = \bm b$, $A\in \RR^{m\times n}$. 
+
+The system may have either: one solution, infinitely many solutions (they form a subspace) or no solutions (when $\bm b \notin \range(A)$).
+
+These cases can be characterized by the ranks of the matrices $A$ and $(A|\bm b)$:
+\begin{itemize}
+    \item NO SOLUTIONS iff $\rank(A) \neq \rank(A|\bm b) = \rank(A) + 1$.
+    
+    The system is called incompatible.
+    
+    Reason: $\bm b$ does not lie in the range space of $A$ because it is not a linear combination of the columns of $A$, i.e.\@ $\bm b$ is linearly independent with them, so the resulting rank gets incremented by one.
+    
+    \item INFINITE SOLUTIONS iff $\rank(A) = \rank(A|\bm b) < n$  (where $n$ is the number of columns in $A$).
+    
+    Reason: $\bm b$ lies in the range space of $A$, and, at the same time, the columns of $A$ are linearly dependent, this implies that, for the vectors in the range space, there are multiple ways of being expressed as a linear combination of the columns of $A$. The vector $\bm b$ is therefore ambiguously representable.
+    
+    In particular, two solutions $\bm x_1$ and $\bm x_2$ with $A\bm x_1=A\bm x_2=\bm b$ are related by the nullspace of $A$ because: $A(\bm x_2 -\bm x_1) = A \bm x_\Delta = \bm 0$, so the set of all possible solutions is $\{\bm x_1 +  \bm x_\Delta : \, \forall \bm x_\Delta \in \Ker(A) \}$. 
+    
+    Then, there are $\dim(\Ker(A))=\mathrm{Nullity}(A)$ ``degrees of freedom''.
+    
+    \item Exactly ONE SOLUTION iff $\rank(A) = \rank(A|\bm b) = 
+n$.
+    
+    Reason: there is exactly one linear combination of the columns of $A$ that results in $\bm b$; this is because, by the rank-nullity theorem, $\mathrm{Nullity}(A)=0$.
+    
+    If the matrix $A$ is square ($m=n$) it is invertible, and we can ensure in this case that the columns of $A$ form a basis of $\RR^n$ and thus all equations have one solution regardless of $\bm b$.
+
+\end{itemize}
+
+We can always convert a system with at least one solution...
+\begin{itemize}
+    \item ...into a system with NO solutions by adding a contradictory equation, e.g.\@ $0=1$ or copy one equation and change the RHS, etc.
+    \item ...into a system with exactly the same solutions by adding a redundant equation, e.g.\@ $0=0$, repeating one of the previous equations, etc.
+    \item ...into a system with infinite solutions (adds one more ``degree of freedom''), by adding a new unused variable ($A$ has a new column of zeros).
+\end{itemize}
+
+Regardless of the ranks and number of solutions:
+\begin{itemize}
+    \item if $m>n$, the system is called \emph{overdetermined} (used in least squares fitting).
+    \item if $n>m$, it is called \emph{underdetermined}.
+    \item and if $n=m$, it is called \emph{exactly determined}.
+\end{itemize}
+
+\item[Eigen-stuff:] an ``eigenvalue'' is a scalar $\lambda$ associated with a square linear operator $A$, such that there exists a nonzero vector $\bm v$, called eigenvector, with \[
+    \boxed{A\bm v = \lambda\bm v}.
+\] 
+That is: input and output are collinear/parallel/proportional.
+
+Note: all nonzero vectors collinear with $\bm v$ are eigenvectors (with the same $\lambda$).
+
+Eigenvalues of $A$ are basis-invariant. There are as many eigenvalues as $n$ (matrix order), but some of them may be complex for real $A$ (prototypical example: rotations).
+
+Each distinct eigenvalue $\lambda_i$ defines a subspace of associated eigenvectors. This set of vectors (+the zero vector) form a vector space called eigenspace (specifically, the $\lambda_i$-eigenspace). The dimension of each eigenspace is called geometric multiplicity $\mu_g(\lambda_i)$ (property of operator, basis-invariant).
+
+We can consider two cases:
+\begin{itemize}
+    \item $\lambda_i\neq 0$, then, the action of $A$ does not change the direction of the input eigenvector $\bm v$.
+
+    \item $\lambda_i=0$, then, the eigenspace is the nullspace; the input eigenvector is ``squished'' into the vector $\bm 0$. The $0$-eigenspace is precisely $\Ker(A)$.
+\end{itemize}
+
+Properties:
+\begin{itemize}
+    \item $A$ and $A\transp$ have same eigenvalues; the eigenvectors are different in general.
+    \item $A$ is singular iff $\lambda=0$ is an eigenvalue. The eigenspace is $\Ker(A)$.
+    \item $A$ and $A^{-1}$ (if exists) have inverse eigenvalues. The eigenvectors for each $\lambda_i$, $\lambda_i^{-1}$ are the same.
+    \item $\alpha A$ has eigenvalues $\alpha\lambda_i$. The eigenvectors are the same as for $A$ and $\lambda_i$.
+    \item $A^k$ has eigenvalues $\lambda_i^k$. Note that, for example, if $1$ and $-1$ are eigenvalues of $A$, they are merged into 1 for $A^2$. The eigenvectors are the same.
+    \item If $p(x)$ is a polynomial, evaluating $p(A)$ results in a matrix that has eigenvalues $p(\lambda_i)$. The eigenvectors are the same.
+    \item $(A-\mu I)$ has eigenvalues $(\lambda_i - \mu)$. The eigenvectors are the same.
+    \item If $A=A^*$ (Hermitian or symmetric real), all eigenvalues are real. (Also, see later, they are orthogonally diagonalizable).
+    \item If $A$ is Hermitian and (semi)-def.\@ positive/negative, all eigenvalues are (zero or) positive/negative.
+    \item If $A$ has $n$ distinct eigenvalues, it is necessarily diagonalizable (because each eigenspace has at least dimension 1). 
+    \item (Because of determinant property) The product of products of all eigenvalues of $A$ and all of $B$ is the same as the product of all eigenvalues of $AB$.
+    \item $AB$ has eigenvalue $0$ iff $A$ or $B$ (or both) has eigenvalue $0$.
+    \item In general, we cannot deduce the eigenvalues of $AB$ just from the eigenvalues of $A$ and $B$. Same for $A+B$.
+\end{itemize}
+
+\item[Trace of matrix:]{} $\trace(A)$ is the sum of the elements of the diagonal. If the matrix is square, it is equal to the sum of eigenvalues.
+
+\item[Determinant:] weird operator $\det(\cdot)$ defined on square matrices (and linear mappings).
+
+Difficult to compute (most efficient algorithms compute the eigenvalues first).
+
+We mostly care only about it for the following properties:
+\begin{itemize}
+    \item it is uniquely defined for any square matrix
+    \item it is basis-independent.
+    \item it is zero iff the matrix is singular
+    \item it is equal to the product of all eigenvalues
+    \item the determinant of the matrix product is the product of determinants
+    \item the determinant of the inverse is the inverse of the determinant
+\end{itemize}
+
+\item[Characteristic polynomial:] defined for a square matrix $A$, as \[\chi_A(\lambda) = {\det}(\lambda I - A),\] which is a polynomial on $\lambda$. $\lambda=\lambda_i$ is a root of $\chi_A(\lambda)$ iff it is eigenvalue of $A$. It is a basis-invariant property of the operator (endomorphism, as it is square).
+
+Property: the constant term of [...] is  the minus  determinant of A. [TODO]
+
+The multiplicity of a particular root/eigenvalue $\lambda_i$ in the polynomial $\chi_A(\lambda)$  is called arithmetic multiplicity $\mu_a(\lambda_i)$.
+
+By the fundamental theorem of algebra: \[\sum_i \mu_a(\lambda_i) =n.\]
+Also: $\mu_g(\lambda_i) \le \mu_a(\lambda_i)$.
+
+Property: a square matrix is diagonalizable iff $\mu_g(\lambda_i) = \mu_a(\lambda_i)$.
+
+Note: some books consider a real matrix non-diagonalizable when it has complex eigenvalues (those eigenvalues are not considered ``valid''); in such case this analysis becomes more complicated.
+
+\newpage
+\item[Cayley-Hamilton theorem:] a square matrix is always ``root'' of its characteristic polynomial (generalized to allow plugging in matrices instead of scalars $\lambda\in\RR$):\[
+\chi_A(A) = 0 \in \RR^{n\times n}
+\]
+
+\item[Normal matrix:] square matrix that commutes with its transposed (/Hermitian for complex):
+\[AA^* =A^*A\]
+The following matrix types are normal: orthogonal (unitary), Hermitian (incl.\@ real symmetric; this also includes all (semi)definite types).
+
+Property: the only normal matrices with eigenvalues on the unit circle are unitary.
+
+\item[Orthogonal vectors:] two nonzero vectors $\bm x$, $\bm y$ are orthogonal when $\bm x\transp \bm y = 0$.
+
+This is denoted as: $\bm x \perp \bm y$.
+
+Two orthogonal vectors are linearly independent. A set of vectors is orthogonal if they are pairwise orthogonal (therefore, they form the basis of a subspace).
+
+If also normalized (unit $2$-norm), they are called orthonormal.
+
+\item[Orthogonal matrix:] real square matrix $Q$ such that $Q\transp = Q^{-1}$. A matrix $Q$ is orthogonal iff all columns (and rows) form an orthonormal basis.
+
+\item[Unitary matrix:] Square matrix with $Q^*=Q^{-1}$ (Hermitian transpose). Generalization of orthogonal: if $Q$ is unitary and real, it is orthogonal.
+
+Multiplication by orthogonal/unitary preserves inner product  (and therefore angles and norm-2 lengths):
+\begin{gather*}
+    (Q\bm x)^*(Q\bm y) = \bm x^*\bm y
+\\    
+\normtwo{Q\bm x} =
+    \sqrt{(Q\bm x)^*(Q\bm x)} =
+    \sqrt{\bm x^*\bm x} =
+    \normtwo{\bm x}
+\\    
+\normfrob{Q\bm x} =
+    \normfrob{\bm x}
+\\[4pt]
+|{\det}(Q)| =1 \qquad \text{(${\det}(Q)=\pm 1$, if $Q$ is real (orthogonal))}
+\end{gather*}
+Orthogonal/Unitary matrices are normal (commute with (Hermitian) transpose).
+
+All eigenvalues $\lambda_i$ lie on the unit circle (these are the only normal matrices with this property). Note: even the real 2D rotations have complex eigenvalues!
+
+Proof: let $Q$ be unitary and $\bm v$ be an eigenvector of $Q$ with eigenvalue $\lambda$, then
+\[
+Q\bm v = \lambda \bm v\implies (Q\bm v)^*  Q\bm v = (\lambda \bm v)^* \lambda \bm v
+\implies \cdots \implies \norm{\bm v}^2 = |\lambda|^2 \norm{\bm v}^2
+\]
+\[
+\implies \boxed{|\lambda| = 1}
+\]
+
+All orthogonal (unitary) transformations are isometries in $\RR^n$ ($\CC^n$).
+
+Particular cases of orthogonal matrices (in $\RR$):
+\begin{itemize}
+    \item (Pure??) Reflection matrix: has one eigenvalue $\lambda_1=-1$, rest $\lambda_i=1$.
+    \item Proper rotation matrix: for 2D, two complex conjugates in unit circle; for 3D, also the eigenvalue $\lambda_3=1$ (eigenvector is the axis of rotation); for higher dims, complicated (Special Orthogonal group, $\mathrm{SO}(n)$), but always $\det(Q)=+1$.
+    \item Improper rotation matrix: composition of rotations and reflections that do not result in a proper rotation; $\det(Q)=-1$.
+    \item Planar rotation: it is a proper rotation for which the matrix in some orthonormal basis is as follows:
+    \begingroup
+        \newcommand{\snth}{s_\theta}
+        \newcommand{\csth}{c_\theta}
+        \NiceMatrixOptions{code-for-first-row = \scriptstyle,code-for-first-col = \scriptstyle }
+        \setcounter{MaxMatrixCols}{12}
+        \newcommand{\blue}{\color{blue}}
+        \[
+        R_\theta(f) = \begin{pNiceMatrix}[last-row,last-col,nullify-dots,xdots/line-style={dashed,blue}]
+        1& & & \Vdots & & & & \Vdots \\
+        & \Ddots[line-style=standard] \\
+        & & 1 \\
+        \Cdots[color=blue,line-style=dashed]& & & \blue \csth &
+        \Cdots & & & \blue {\text{-}\snth} & & & \Cdots & \blue \leftarrow p \\
+        & & & & 1 \\
+        & & &\Vdots & & \Ddots[line-style=standard] & & \Vdots \\
+        & & & & & & 1 \\
+        \Cdots & & & \blue \snth & \Cdots & & \Cdots & \blue \csth & & & \Cdots & \blue \leftarrow q \\
+        & & & & & & & & 1 \\
+        & & & & & & & & & \Ddots[line-style=standard] \\
+        & & & \Vdots & & & & \Vdots & & & 1 \\
+        & & & \blue \overset{\uparrow}{p} & & & & \blue \overset{\uparrow}{q} \\
+        \end{pNiceMatrix}\]
+        \[\snth = \sin\theta,\,\csth = \cos\theta\]
+    \endgroup
+    where $\theta$ is the rotation angle (counterclockwise), and $p$,~$q$ are the coordinate indices corresponding to a 2D plane.
+
+    Every proper rotation can be written as composition (matrix product) of proper rotations [TODO: find source of this claim...].
+
+\end{itemize}
+
+\item[Semi-orthogonal/semi-unitary matrix:] matrix $\hat Q \in \RR^{m\times n}$ whose columns are orthonormal. Note that, by definition, $m \ge n$ (there cannot be a set of more than $n=m$ orthogonal vectors in $\RR^m$).
+
+It has the property: $\hat Q\transp \hat Q = I$.
+
+Note that, unless $m=n$, we don't have the property $\hat Q \hat Q\transp  \overset{!}{=} I$ (that would be fully orthogonal). (We see later that $\hat Q \hat Q\transp$ is a projection matrix).
+
+Left and right multiplication by semi-orthonormal $\hat Q$ preserves 2-norm:
+\[
+    \normtwo{\hat Q \bm x}=
+    \sqrt{(\hat Q \bm x)\transp (\hat Q \bm x)}=
+    \sqrt{\bm x\transp \hat Q\transp \hat Q \bm x}=
+    \normtwo{\bm x}
+\]
+\[
+    \normtwo{ \bm x \hat Q}=
+    \cdots =
+    \sqrt{\smash[b]{{\hat Q\transp \underbrace{\bm x\transp\bm x}_{\text{scalar}} \hat Q}}}
+    =\normtwo{\bm x}
+\]\vspace{0.01em} % Fix underbrace
+
+But multiplication by $\hat Q\transp$ does NOT preserve the 2-norm.
+
+
+
+\item[Orthogonal components of a vector:] 
+With the orthonormal set of vectors (basis of a subspace of $\RR^m$), forming the columns of the semi-orthogonal matrix $\hat Q$ \[
+\hat Q=
+\begin{pNiceMatrix}[vlines]
+    \bm q_1 & \bm q_2 & \cdots &\bm q_n
+\end{pNiceMatrix}
+\in \RR^{m\times n}, \, m\ge n
+,\] and a given vector $\bm u \in \sspan(\{\hat{\bm q_i}\}_{1\le i\le n} ) = \range(\hat Q)$, we can obtain the $i$-th coordinate on this basis by just using the scalar product:
+\[
+    (\bm u)_{i,(\hat Q)} = \bm q_i\transp \bm u
+\]
+For a general vector $\bm v$,  we obtain the ``residual component'' vector $\bm r$ (or simply ``residual''), with respect to $\hat Q$:
+\[
+    \bm r = \bm v - 
+    \underbrace{\left(
+        (\bm q_1^* \bm v)\, \bm q_1 + \cdots+
+        (\bm q_n^* \bm v)\, \bm q_n
+    \right)}_\text{projection of $v$ on $\sspan(\hat Q)$}
+\]
+
+It can be proven that $\bm r$ is either zero (when $\bm v\in \sspan(\hat Q)$) or orthogonal to $\sspan(\hat Q)$ (when $\bm v\notin \sspan(S)$), in both cases we have: \[\bm q_i^* \bm r = 0, \, \forall i\]
+
+Then, for the expression:
+\[
+\bm v = \bm r + \sum_{i=1}^{n}(\bm q_i \bm q_i^*)\,\bm v
+\]
+
+If $\bm v \notin \sspan(Q)$ this is a decomposition into $n+1$ orthogonal components.
+
+Otherwise ($\bm v \in \sspan(Q)$), $\bm r$ is zero; e.g.\@ if $m=n$, then $Q$ is a basis of the whole space $\RR^n$, so $\bm r$ must be zero.
+
+
+\item[Orthogonal complement of a set of vectors:] 
+
+Vector subspace formed by all vectors orthogonal to all vectors in a set $S$.
+
+Denoted by: $S^\perp$.
+
+Property: if $S$ is a subspace, then \[(S^\perp)^\perp = S.\]
+And also, when $S\subseteq \RR^n$ is subspace, then
+\[ S \oplus S^\perp = \RR^n.\]
+[TODO: explain the meaning of a direct sum.]
+
+
+\item[Diagonalization:] 
+(a.k.a.\@ eigendecomposition) decomposition of a given matrix $A$ by using a \emph{similar} diagonal matrix $\Lambda$, that is:
+\[\boxed{A = P\,\Lambda\,P^{-1}}.\] $\Lambda$ actually contains the eigenvalues ($\lambda_i$ repeated $\mu_a(\lambda_i)$ times), and the columns of $P$ are lin.\@ indep.\@ eigenvectors (they form a basis).
+
+When such a decomposition is possible, that is, if $n$ lin.\@ independent eigenvectors can be found (hence $P$ square can be built), then $A$ is diagonalizable, a.k.a.\@ non-defective.
+
+$A$ is diagonalizable iff all $\mu_a(\lambda_i)=\mu_g(\lambda_i)$, or iff (equivalent condition) $\sum_i\mu_g(\lambda_i)=n$.
+
+(Note: here we assumed the convention that a complex eigenvalue is considered valid for real matrices)
+
+In the case of defective matrices, this can be generalized by replacing $\Lambda$ diagonal with an ``almost-diagonal'' version $J$ called Jordan canonical form; $J$ is block diagonal, where each block $J_i$ has eigenvalues on the diagonal and ones on the first upper diagonal (or lower, depending on convention). If $A$ is diagonalizable, then $\Lambda=J$ is valid in the diagonalization.
+
+Property: a matrix is \emph{orthogonally diagonalizable} ($A=Q\Lambda Q\transp$, with $Q\transp=Q^{-1}$) iff it is normal. If it is also real symmetric/Hermitian then all eigenvalues are real (in fact: for a normal matrix, the eigenvalues are real iff it is Hermitian).
+
+\end{description}
+
+\newpage
+\addsec{Norms}
+
+\begin{description}
+\item[Vector norm axiomatic definition:]\phantom{ }
+
+An operator on vectors $\norm{\cdot} : \RR^m \to \RR$ is called a norm when the following conditions are met:
+
+    \begin{itemize}
+        \item $\norm{a\bm x} = |a| \norm{\bm x}$ (homogeneity)
+        \item $\norm{\bm x + \bm y} \le \norm{\bm x} + \norm{\bm y}$ (triangle inequality)
+        \item $\norm{\bm x} = 0 \iff \bm x = \bm 0$
+        
+        (when only this one fails, we have a seminorm)
+    \end{itemize}
+\item[Vector norm properties:]\phantom{ }
+    \begin{itemize}
+        \item $\norm{\bm x} \ge 0$ (positive definiteness, sometimes as an axiom definition, but not necessary; also valid for seminorms)
+        \item $
+        |\norm{\bm x} - \norm{\bm y} | \le \norm{\bm x - \bm y}
+        \quad \text{(follows from triangle inequality)}
+        $
+    \end{itemize}
+
+\item[Vector $p$-norms:]\phantom{ }
+\begin{align*}
+    \norm{\bm x}_p =& \left(\sum_i |x_p|^p\right)^{1/p}
+    \quad \text{($p$-norm)}
+    \\
+    \norm{\bm x}_1 =& \sum_i |x_i|
+    \\
+    \normtwo{\bm x} =& \left(\sum_i |x_p|^2\right)^{1/2}
+    = \sqrt{\bm x ^* \bm x}
+    \\
+    \norminf{\bm x} =& \max_{1\le i\le m}|x_i|
+\end{align*}
+
+$\norminf{\bm x}$ can be proven to be the asymptotic case of $p$-norm for $p\to\infty$.
+
+Note: not all vector norms are $p$-norms.
+
+\item[Weighted norm:]\phantom{ }
+\[
+\norm{\bm x}_W = \norm{W\bm x}, \text{ for $W$ invertible (usually diagonal)}
+\]
+
+\item[H\"older's inequality:]
+
+Relates scalar product and vector $p$-norms:
+\[
+|\bm x\transp \bm y| \le \norm{\bm x}_p\norm{\bm y}_q, \quad \text{ with }\frac{1}{p}+\frac{1}{q} = 1, \quad p, q\in [1,\infty]
+\]
+
+\item[Cauchy-Schwarz inequality:]
+H\"older's for $p=q=2$.
+\[
+|\bm x\transp \bm y| \le \normtwo{\bm x}\normtwo{\bm y}
+\]
+
+Also recall: $
+\bm x\transp \bm y =
+    \normtwo{\bm x}\normtwo{\bm y} \cos \alpha_{\bm x,\bm y}$
+
+\newpage
+\item[Vector norms are equivalent:] (this is valid for finite-dimensional vector spaces)
+\[
+    c_1 \norm{\bm x}_\alpha \le
+        \norm{\bm x}_\beta  \le
+    c_2 \norm{\bm x}_\alpha
+\]
+For some $c_1$, $c_2$ that do not depend on $\bm x$ (but maybe on $n$).
+
+Some particular cases:
+\begin{align*}
+    \normtwo{\bm x} &\le \normone{\bm x} \le \sqrt{n}\normtwo{\bm x}
+    \\
+    \norminf{\bm x} &\le \normtwo{\bm x} \le \sqrt{n}\norminf{\bm x}
+    \\
+    \norminf{\bm x} &\le \normone{\bm x} \le n\norminf{\bm x}
+\end{align*}
+
+\item[Spectral radius:] defined for square matrices as the largest eigenvalue (in abs.\@ value).
+\[\rho(A) = \max_i |\lambda_i(A)| \]
+
+\item[Matrix norms:]
+The vector norm axiomatic definition can be directly generalized into matrices (just by replacing vectors with matrices).
+
+Matrix norms are also all equivalent.
+
+\item[``Entry-wise'' matrix norms:]
+Norms that result from the use of a vector norm on the ``vectorized'' or ``flattened'' matrix $\bm v_A = \mathrm{vec}(A)$ (1D vector with $m\cdot n$ entries, may be traversed column-wise or row-wise or in any arbitrary order; this order irrelevant for most vector norms ``of interest'').
+
+The usual example of ``Entry-wise'' matrix norm is the Frobenius norm (using vector 2-norm).
+
+\item[Induced matrix norms:]
+Given two vector norms $\norm{\cdot}_\alpha$ and $\norm{\cdot}_\beta$ that can be applied to the output and input spaces (resp.) of a matrix $A$, we define the induced matrix norm of $A$ as:
+\[
+\norm{A}_{(\alpha,\beta)}
+=
+\sup_{\bm x\neq \bm 0}
+    \frac{\norm{A\bm x}_\alpha}{\norm{\bm x}_\beta}
+=
+\max_{\norm{\bm x}_{\beta}=1}
+    {\norm{A\bm x}_\alpha}
+\]
+
+Pedantic remark: $\sup$ is not really needed and $\max$ is enough, because the set of values of the quotient is compact, regardless of the fact that $\RR^n-\{\bm 0\}$ is not compact.
+
+Shorthand notation: $\norm{A}_{(\alpha,\alpha)}
+=\norm{A}_{\alpha}$
+
+For $Q$ orthogonal: $\norm{Q}_{2} = 1$, (because $Q\bm x$ preserves the 2-norm of $\bm x$).
+
+Special cases:
+\begin{itemize}
+    \item $\displaystyle \norm{A}_1 = \norm{A}_{(1,1)} = \max_j \sum_i |A_{ij}|$
+    \,\,\,
+    (largest column, sum over rows)
+
+    \item $\displaystyle \norm{A}_\infty = \norm{A}_{(\infty,\infty)} = \max_i \sum_j |A_{ij}|$
+    \,\,\,
+    (largest row, sum over columns)
+    
+    \item $\displaystyle \norm{A}_2 = \norm{A}_{(2,2)} = \sqrt{\rho(A\transp A)}= \sqrt{\rho(A A\transp)} = \sigma_1$
+    
+    Largest singular value of $A$ (see SVD), a.k.a. spectral norm.
+\end{itemize}
+\vspace{0.5em}
+
+Property for any induced matrix norm $\alpha$: \[\rho(A) \le \norm{A}_\alpha\]
+
+\newpage
+\item[Frobenius norm:]
+
+It is the ``entry-wise'' 2-norm.
+\[
+\normfrob{A}
+    = \sqrt{\sum_i\sum_j |A_{ij}|^2}
+    = \sqrt{\trace(A\transp\, A)}
+    = \sqrt{\trace(A\, A\transp)}
+\]
+
+(See section on properties of $A\transp A$ and $AA\transp$)
+
+And also (because singular values are eigenvalues of $A\transp A$):
+\[
+\normfrob{A}
+    = \sqrt{\sum_i\sigma_i^2}
+\]
+(See section on SVD)
+
+\item[Property:] for $Q_1$ and $Q_2$ orthogonal (of suitable sizes), the 2-norm and Frobenius norm are preserved:
+\[\normtwo{Q_1A} = \normtwo{A} = \normtwo{AQ_2} \]
+\[\normfrob{Q_1A} = \normfrob{A} = \normfrob{AQ_2} \]
+
+\item[Submultiplicative norm:] Matrix norm $\norm{\cdot}$ with
+\[
+\norm{AB}\le \norm{A}\,\norm{B}
+\]
+
+All induced matrix norms (including $p$-norms) and the Frobenius norm are sub-multiplicative.
+
+Example of NON-sub-multiplicative matrix norm: $\norm{A} = \max_{i,j} |a_{ij}|$ (this is the entry-wise $\infty$-norm).
+
+\item[Property:]
+$\norm{\cdot}$ is an induced matrix norm, then $\rho(A)<1\implies \norm{A} < 1$
+
+(in fact, this would also work for any submultiplicative matrix norm??)
+
+\item[Property:]
+\[
+    \lim_{k\to\infty}A^k = 0 \iff \rho(A) < 1
+\]
+% Exercise!
+%Proof: choose any induced matrix norm $\norm{\cdot}$.
+%Suppose $\rho(A)<1$, then $\norm{A} < 1$, then as $\norm{A^k}\le \norm{A}^k$, we have $\norm{A^k} \to 0$ and therefore $A^k \to 0$
+
+\item[Property:]
+For any submultiplicative matrix norm:
+\[
+    \lim_{k\to\infty}\norm{A^k}^{1/k} = \rho(A)
+\]
+
+\item[Compact set:]
+In the usual case of a set in $\RR^n$ (or $\CC^n$), compact means ``closed and bounded''. (In the more general case, it means some topological abstract nonsense involving \emph{covers} and \emph{finite subcovers}).
+
+\item[``Compactness argument'':] (a.k.a.\@ \emph{extreme value theorem})
+
+``A continuous function attains its maximum (and minimum) value in a compact set''.
+
+
+\end{description}
+
+\newpage
+\addsec{Properties of \texorpdfstring{$A\transp A$ and $AA\transp$}{AAT and AAT}}
+What follows is important for the least squares methods and the Moore-Penrose pseudoinverse calculation.
+
+More info in textbook [\footnote{\emph{{\'A}lgebra lineal y geometr{\'\i}a vectorial}, Borobia, A.\@ and Estrada. B.\@ UNED (Sanz y Torres), ISBN: 978-84-15550-85-3.}] Proposition 8.41 (I'm sorry, it is in Spanish...).
+
+The matrix $A\transp A$ is sometimes called Gram matrix or Gramian matrix\footnote{See \url{http://www.seas.ucla.edu/~vandenbe/133A/lectures/inverses.pdf}.}.
+
+
+Let $A\in \RR^{m\times n}$, then it holds:
+\begin{itemize}
+    \item $A\transp A$ has size $n \times n$ and $AA\transp$ has size $m \times m$.
+
+    \item {} $A\transp A$ is symmetric square ($n\times n$) and is ``smaller'' than $A$ when $m>n$
+    
+    (e.g.\@ $A\bm x=\bm b$ is an overdetermined system).
+    
+    $AA\transp$ is symmetric square ($m\times m$) and is ``smaller'' than $A$ when $n>m$.
+    
+    \item {} As they are symmetric, both matrices are also \emph{normal}.
+
+    \item {}$(A\transp A)$ and $(A A\transp )$ are symmetric positive semidefinite matrices (SPSD), therefore:
+    \begin{itemize}
+        \item All of the eigenvalues are nonnegative (can be zero).
+        \item They admit the Cholesky decomposition (in the SPD case, it is also unique).
+        %\item They admit the ``square root decomposition'': $M = B B$, with $B$ Hermitian (or real symmetric) and positive definite. Such $B$ (with those properties) is unique.
+    \end{itemize}
+
+    \item Each entry $(A\transp A)_{ij}$ is the inner product of two columns of $A$ (for $AA\transp$, those are rows of $A$). 
+    
+    This clearly explains why for $Q$ with $m=n$ orthonormal columns we get $ Q\transp Q=QQ\transp=I$; that is, $Q$ is orthogonal.
+    
+    Note that $Q$ here is square; if it was $\hat Q$ rectangular (i.e.\@ \emph{semi}-orthogonal, with orthonormal columns; requires $m\ge n$), then the product $\hat Q\transp \hat Q = I$ is never commutative (the resulting matrix has a different size!); in fact, $\hat{Q}\hat{Q}\transp$ is NOT full rank (nonetheless, it is still SPSD).
+    
+    As we will see later, $\hat{Q}\hat{Q}\transp$ is actually a projection matrix onto $\range(\hat Q)$.
+    \item The trace is the sum of all elements of $A$ squared (square of Frob norm):
+    \[ \trace(A\transp A) = \trace(A A\transp) = \sum_i\sum_j |a_{ij}|^2= \normfrob{A}^2\]
+    \vspace{-0.55cm}
+
+    \item $\rank(A) = \rank(A\transp A) = \rank(AA\transp )$.
+    \item $\Ker(A) = \Ker(A\transp A)$.
+    \item $\Ker(A\transp) = \Ker(AA\transp )$.
+    \item If $m < n$, $A\transp A$ cannot be invertible.
+    \item In the case $m\ge n$, $(A\transp A)$ is invertible iff $A$ is full (column) rank.
+
+    \item $(A\transp A)$ and $(A A \transp)$ share the same nonzero eigenvalues.
+
+    \item Being symmetric, by the spectral theorem, $A\transp A$ admits orthogonal diagonalization (and with real eigenvalues): \[A\transp A = V\Lambda V\transp.\] And also $A A \transp = U\Lambda^{\prime} U\transp$, where $\Lambda$ and $\Lambda^{\prime}$ contain the same nonzero elements.
+    
+    \item If $A$ is square, the largest singular value is $\normtwo{A} = \sqrt{\rho(A\transp A)}$ (see SVD section).
+
+\end{itemize}
+
+\addsec{Singular Value Decomposition (SVD)}
+
+Best explanation ever: \url{https://www.youtube.com/watch?v=rYz83XPxiZo}
+
+Also, worth reading:
+\begin{itemize}
+    \item \url{https://gregorygundersen.com/blog/2018/12/10/svd/}
+    \item \url{https://gregorygundersen.com/blog/2018/12/20/svd-proof/}
+\end{itemize}
+\vspace{0.5em}
+
+Consider a general matrix $A \in \RR^{m\times n}$ (could be not full rank and rectangular (not square)).
+
+[TODO: add geometric definition (ellipsoid axis and radius)]
+
+We are looking for two sets of orthonormal vectors $\bm u_i \in \RR^{m}$ and $\bm v_i \in \RR^n$, such that:
+\[A\bm v_i = \sigma_i \bm u_i\,, \quad \sigma_i \ge 0\]
+And also $\sigma_i$ are ordered in descending order:
+\[ \sigma_i > \sigma_j \iff i > j \]
+
+\begin{itemize}
+    \item $\bm u_i$ are called left singular vectors, they are in the image (output space).
+    \item $\bm v_i$ are called right singular vectors, they are in the domain  (input space).
+    \item $\sigma_i \ge 0$ are called singular values.
+\end{itemize}
+
+This could be seen as the generalization of the definition of eigenvalue/vector for non-square matrices; that is, for an eigenvector we would have $\bm u_i= \bm v_i$, but note that this is not a proper generalization because an eigenvalue can be negative or even complex (SVD has all $\sigma_i$ real and nonnegative) and the eigenvectors may not form an orthogonal basis (SVD has all $\bm u_i$ orthonormal and all $\bm v_i$ orthonormal). Moreover (proven later) a SVD always exists regardless of whether $A$ square is diagonalizable or not.
+
+We can find at most $N=\min(m,n)$ independent vectors and the first $r=\rank(A)$ of which have $\sigma_i\neq 0$ and the last $N-r$ have $\sigma_i= 0$:
+\[
+\left\{
+\begin{array}{lclcl}
+ A \bm v_1 &=& \sigma_1 \, \bm u_1 \\
+ A \bm v_2 &=& \sigma_1 \, \bm u_2 \\
+ &\vdots \\
+ A \bm v_r &=& \sigma_r \, \bm u_r \\
+ A \bm v_{r+1} &=& \bm 0 &=& 0 \,\bm u_{r+1} \\
+ &\vdots \\
+ A \bm v_N &=& \bm 0 &=& 0 \,\bm u_{N} \\
+\end{array}
+\right.
+\]
+\newpage
+
+Now, from these equations:
+\begin{itemize}
+    \item The last $\bm v_i$ (for $i>r$) must form an orthonormal basis of $\Ker(A)$.
+
+    \item The first $\bm u_i$ (for $i\le r$) must form an orthonormal basis of $\range(A)$.
+
+    \item The last $\bm u_i$ (for $i>r$) can be chosen arbitrarily, but in such a way that all $\bm u_i$ end up being orthonormal. Besides [TODO: check this], in the case that $n\ge m$, these last $\bm u_i$ span the subspace $(\range(A))^\perp$ (orthogonal complement of the range).
+
+\end{itemize}
+
+
+This can be rewritten in matrix notation instead of vector-by-vector:
+\[
+A \,
+\begin{pNiceMatrix}[vlines]
+    \bm v_1 & \cdots&\bm v_r& \cdots & \bm v_N \\
+\end{pNiceMatrix}
+=
+\begin{pNiceMatrix}[vlines]
+    \bm u_1 & \cdots&\bm u_r & \cdots & \bm u_N \\
+\end{pNiceMatrix}
+\begin{pNiceMatrix}
+    \sigma_1 \\
+    & \sigma_2 \\
+    & & \ddots \\
+    & & & \sigma_r \\
+    & & & & \ddots \\
+    & & & & & \sigma_N
+\end{pNiceMatrix}
+\]
+\[
+\implies
+A \hat V = \hat U \hat\Sigma
+\implies
+\boxed{A = \hat U \hat \Sigma \hat V\transp}
+\]
+
+With $\hat{U}\in \RR^{m\times N}$, $\hat{V}\in \RR^{n\times N}$, $\hat\Sigma\in\RR^{N\times N}$.
+
+$\hat U$ and $\hat V$ are \emph{semi}-orthogonal.
+$\hat\Sigma$ is square diagonal with nonnegative entries in descending order (the $N-r$ last entries are zero, $\sigma_i=0$).
+
+The columns of $\hat U$ span $\range(A)$.
+
+Note that all of this is true regardless of the shape of $A$ (given by $m,n$; and recall that $N=\min(m, n)$).
+
+When $\hat U$ or $\hat V$ is square, we write $U=\hat U$ or $V=\hat V$, and then $U$ or $V$ is orthogonal (and not only \emph{semi}-orthogonal).
+
+Depending on $m,n$ we have that:
+\begin{itemize}
+    \item $m=n=N$: $A$ is square; then both $U=\hat{U}$ and $V=\hat{V}$ are also square.
+    
+    Also $\hat\Sigma$ has the same size as $A$, then we write $\hat\Sigma=\Sigma$.
+    
+    Hence, we can write: \[\boxed{A=U\Sigma V\transp}\]
+    \item $m>n=N$: $A$ is \emph{tall}; then $V=\hat V$ is square ($m\times m$) and $\hat U$ has the same size as $A$ (also \emph{tall}).
+    
+    
+    Hence, we can write: \[\boxed{A=\hat U\hat\Sigma V\transp}\]
+    \item $n>m=N$: $A$ is \emph{fat}; then $U=\hat U$ is square ($n\times n$) and $\hat V\transp$ has the same size as $A$ (note that it is $\hat V\transp$ and not $\hat V$ (!); the rows of $V\transp$ are right singular vectors).
+    
+    This case seems problematic, because we have that $\hat{V}\hat{V}\transp\neq I$ (but $\hat{V}\transp\hat{V}=I$).
+    
+    But, we can write instead: \[
+         \hat{V}\transp A\transp=\hat\Sigma\transp U\transp
+         \implies
+         A\transp=\hat V\hat\Sigma\transp U\transp
+         \implies
+         \boxed{A= U\hat\Sigma \hat V\transp}
+    \]
+\end{itemize}
+
+Now, assume that $A=\hat U\hat\Sigma \hat V\transp$ is a valid SVD of $A$, then $A\transp = \hat V\hat\Sigma \hat U\transp$ is a valid SVD of $A\transp$ (just by swapping $\hat U$ and $\hat V$).
+
+This is the reason why we usually focus on the case $m\ge n$: the case $m < n$ can be analyzed with the transposed matrix and then swapping left and right singular vectors (singular values are the same).
+
+\subsection*{SVD as a sum of outer products}
+Because $\hat\Sigma$ is diagonal, we can write:
+\begin{align*}
+A &= \hat U \hat \Sigma \hat V\transp
+=
+\begin{pNiceMatrix}[vlines]
+    \bm u_1 & \cdots&\bm u_r & \cdots & \bm u_N \\
+\end{pNiceMatrix}
+\begin{pNiceMatrix}
+    \sigma_1 \\
+    & \sigma_2 \\
+    & & \ddots \\
+    & & & \sigma_r \\
+    & & & & \ddots \\
+    & & & & & \sigma_N
+\end{pNiceMatrix}
+\begin{pNiceMatrix}[hlines]
+    \bm v_1\transp \\ \vdots\\\bm v_r\transp\\ \vdots \\ \bm v_N\transp \\
+\end{pNiceMatrix}
+=
+\\
+A&=
+\begin{pNiceMatrix}[vlines]
+    \bm u_1 & \cdots&\bm u_r & \cdots & \bm u_N \\
+\end{pNiceMatrix}
+\begin{pNiceMatrix}[hlines]
+    \sigma_1\bm v_1\transp \\ \vdots\\\sigma_r\bm v_r\transp\\ \vdots \\ \sigma_N\bm v_N\transp \\
+\end{pNiceMatrix}
+=
+\sum_{i=1}^N \bm u_i\, \sigma_i \bm v_i\transp
+=
+\sum_{i=1}^N \sigma_i (\bm u_i\,  \bm v_i\transp)
+\end{align*}
+
+Also, because $\sigma_i=0$ for $i>r=\rank(A)$:
+\[
+    \boxed{
+        A = \sum_{i=1}^r \sigma_i (\bm u_i\,  \bm v_i\transp)
+    }
+\]
+
+\subsection*{Full SVD}
+
+The described SVD is actually already a reduced version (called ``thin SVD'' in Wikipedia), because $\hat\Sigma$ is square and, if $A$ is not square, then $\hat\Sigma$ it is ``smaller'' than $A$.
+
+If $A$ is rectangular we can force $\hat\Sigma$ to have the same size as $A$ and have both $U$ and $V$ square (sizes $m\times m$ and $n\times n$ respectively); now both result orthogonal instead of just one of them orthogonal and the other \emph{semi}-orthogonal.
+
+This is done as follows:
+\begin{itemize}
+    \item If $m>n$: add $m-n$ zero rows to $\hat\Sigma$ and $m-n$ arbitrary orthonormal columns to $\hat U$; now, the resulting matrix $U$ is square and orthogonal (spans $\RR^m$ instead of just $\range(A)$).
+    \item If $m<n$: add $n-m$ zero columns to $\hat\Sigma$ and $n-m$ arbitrary orthonormal columns to $\hat V$ (rows to $\hat V\transp$); now, $\hat V=V$ becomes square and orthogonal.
+\end{itemize}
+
+With that, we obtain the ``Full SVD'' decomposition:
+\[ \boxed{A = U \Sigma V\transp} \]
+
+In the full SVD there are always $m$ left singular vectors ($\bm u_i$, $U\in\RR^{m\times m}$) and $n$ right singular vectors ($\bm v_i$, $V\in\RR^{n\times n}$); whereas in the reduced (thin) SVD there are $N=\min(m,n)$ left and right singular vectors. In both cases, there are $N$ singular values.
+
+In SciPy (\verb|scipy.linalg.svd|) we can choose:
+\begin{itemize}
+    \item \verb|full_matrices=True| (default): Full SVD described here ($\Sigma$ and $A$ have the same shape; and $U$, $V$ are always square).
+    
+    Same as the default in Matlab.
+    \item \verb|full_matrices=False|: the SVD described above (with square $\Sigma$; and $U$, $V$ are not always square).
+    
+    Same as the \verb|'econ'| variant in Matlab.
+\end{itemize}
+Note that the ``compact SVD'' described next is not provided by SciPy, because that would require infinite precision on the singular values that are exactly zero.
+
+\subsection*{Compact SVD}
+
+For simplicity, assume the ``tall matrix'' case $m\le n$ ($N=\min(m,n)=n$).
+
+In the last SVD equations (for $i>r$), we needed to compute vectors $\bm v_i$ in $\Ker(A)$. But these are unnecessary in order to recover $A$ from the SVD.
+
+Indeed, knowing that $\sigma_i=0$ for $i>r$, the reduced SVD (thin) can be written as:
+\[
+    A{V} = \hat{U} \hat{\Sigma} \iff A = \hat{U} \hat{\Sigma}V\transp
+    =\sum_{i=1}^{n}
+        \bm u_i \, \sigma_i \, \bm v_i\transp
+    =\sum_{i=1}^{r}
+        \bm u_i \, \sigma_i \, \bm v_i\transp,
+\quad r=\rank(A)
+\]
+
+Then, define $\hathat U$ and $\hathat V$ as the same matrices as $\hat U$ and $V=\hat V$, but removing the last $n-r$ columns of both (rows of $V\transp$). Also define $\hathat \Sigma\in\RR^{r\times r}$ as the square diagonal matrix with the first $r$ singular values $\sigma_i$ (the nonzero ones).
+
+Then, from the last expression, we can simply write:
+\[
+    A = \hathat U \hathat\Sigma \hathat V\transp
+\]
+
+This is called the ``compact'' SVD. In practice, no numerical library implements this, because it would require to compute the zero singular values with exact precision.
+
+\subsection*{Lossy compression using truncated SVD}
+
+We can remove \emph{even more} terms in the sum of outer products, but then an equality cannot be achieved, instead we get an approximate decomposition for which we can obtain error bounds. This is called ``truncated'' SVD and can be used to build a lossy compression algorithm for matrices (e.g.\@  rasterized images); note that this is rarely used in practice for image compression.
+
+Assume that we keep the $R\le r=\rank(A)$ first terms, then we have:
+\[
+     A \approx A_R = \sum_{i=0}^{R} \bm u_i \, \sigma_i \, \bm v_i\transp
+\]
+
+Now, note that the matrix difference (error) is:
+\[
+A - A_R = \sum_{i=R+1}^{r} \bm u_i \, \sigma_i \, \bm v_i\transp
+\]
+
+Then, it can be proved that:
+\[
+\boxed{\normtwo{A - A_R} = \sigma_{R+1}}
+\]
+
+And also:
+\[
+\normfrob{A - A_R} = \sqrt{\sum_{i=R+1}^r\sigma_{i+1}^2}
+\]
+
+Now, compression is only controlled by the choice of $R$ (we ignore other possible numerical errors in the SVD algorithm, like quantization): this $R$ can fixed or chosen by dropping the terms with singular values below a relative tolerance. This tolerance can be defined with respect to the largest singular value $\sigma_1$ (2-norm) or using the Frobenius norm as reference (constrain on ``energy loss'').
+
+
+Recall that $\bm u_i$ and $\bm v_i$ consist of $m$ and $n$ numbers (resp.), so, also counting $\sigma_i$ we need to store $(m+n+1)$ numbers for each tuple $(\bm u_i,\,\bm v_i,\,\sigma_i)$ (used to build a term in the sum). Therefore, we require to store $R\cdot (m+n+1)$ numbers in total.
+
+As there are $m\cdot n$ elements in $A$ we may define the data compression ratio or efficiency as:
+\[
+\eta
+= \frac{\text{uncompressed size}}{\text{compressed size}}
+= \frac{m\cdot n}{R\cdot (m+n+1)}
+\]
+
+Note: it can happen that $\eta\le 1$, then this ``compression'' is useless (more efficient to just store $A$).
+
+\subsection*{Existence and uniqueness of the SVD}
+
+\subsubsection*{Proof: Existence of SVD (from G.\@ Strang lecture)}
+[TODO: finish this]
+
+% Assume $A\in\RR^{m\times n}$ full rank.
+
+% Let us define the $\bm u_i$ in terms of $\sigma_i$ and $\bm v_i$ so that if both are found, $\bm u_i$ is unambigously defined: $\bm u_i = \frac{A \bm v_i}{\sigma_i}$; once $\sigma_i$ are defined sorted in $i$; with all this, the only ``degree of freedom'' is on the choice of $\bm v_i$.
+
+% Choose $\bm v_i$ and $\sigma_i^2$ as the eigenvectors/values in the orthogonal diagonalization: \[A\transp A= V\Lambda V\transp\]
+
+% Then: 
+
+% Let's prove that those resulting $\bm u_i$ are orthogonal, pick WLOG $\bm u_1$, $\bm u_2$:
+% \[ \bm u_1\transp \,\bm u_2 =
+% \frac{(A \bm v_1)\transp}{\sigma_1}
+% \,
+% \frac{(A \bm v_2)\transp}{\sigma_2}
+% =
+% \frac{
+%     \bm v_1\transp
+%     A\transp A
+%     \bm v_2
+% }{\sigma_1\sigma_2}
+% \]
+% We know that $\bm v_2$ is eigenvector of $A\transp A$: 
+% \[ \bm u_1\transp \,\bm u_2 =
+% \frac{
+%     \bm v_1\transp
+%     \sigma_2^2
+%     \bm v_2
+% }{\sigma_1\sigma_2}
+% =
+% \frac{\sigma_2}{\sigma_1}
+% \bm v_1\transp
+% \bm v_2 =
+% \bm 0
+% \]
+
+% Steps: $V\transp$ rotation, $\Sigma$ axis stretching, $U$ rotation. We can have $U=V$ in the case that $A$ is symmetric AND positive definite.    
+
+% From SVD we can easily get a SQ decomposition (Symmetric-by-Orthogonal).
+
+% [TODO: ...]
+
+\subsubsection*{Proof: Existence of SVD (from LTH lectures, same as Trefethen \& Bau book)}
+
+[TODO: finish this]
+
+% We have $\sigma_1 = \normtwo{A}$ (see properties), then $A \bm v_1 = \sigma \bm v_1$.
+
+% Now extend $\bm v_1$ to form $V_1$:
+% \[
+% A V_1 =
+%     [A \bm v_1,  A \bm v_2, ..., A \bm v_{?}]
+%     =
+%     [\sigma_1 \bm u_1,  A \bm v_2, ..., A \bm v_{?}]
+% \]
+% Now premultiply by $U^*$, In particular, the first resulting row:
+% \[
+% U_1^* (\sigma_1 \bm u_1)
+% =
+% \begin{pNiceMatrix}[hlines]
+%     \bm u_1^* \\ \bm u_2^* \\ ... \\ \bm u_{?}^*
+% \end{pNiceMatrix}^* \sigma_1 \bm u_1
+% =
+% \sigma_1 \begin{pNiceMatrix}[hlines]
+%     \bm u_1^*\bm u_1 \\ \bm u_2^*\bm u_1 \\ ... \\ \bm u_{?}^*\bm u_1
+% \end{pNiceMatrix}
+% =
+% \sigma_1 \begin{pNiceMatrix}[hlines]
+%     1 \\ 0 \\ ... \\ 0
+% \end{pNiceMatrix}
+% =
+% \sigma_1 \bm e_1\]
+
+\subsubsection*{Proof: Uniqueness of SVD}
+[TODO: finish this]
+
+% Let us consider the orthogonal diagonalization of SPSD matrix $A\transp A$:
+% \[
+%     A\transp A = V_* \Lambda V_*\transp \in \RR^{n\times n}
+% \]
+
+% and also $AA\transp$ (also SPSD):
+% \[
+%     AA\transp = U_* \Lambda^\prime U_*\transp \in \RR^{m\times m}
+% \]
+
+% Now, because of the properties of these matrices, $\Lambda$ and $\Lambda^\prime$ are diagonal and contain the same nonzero elements: eigenvalues of  $A\transp A$ and $AA\transp$, which must be nonnegative (by SPSD).
+
+% Consider the full SVD of $A$: $A=U\Sigma V\transp$.
+
+% Then: \[A\transp A
+%     = (U\Sigma V\transp)\transp U\Sigma V\transp 
+%     = V\transp\Sigma\transp \underbrace{(U\transp U)}_I\Sigma V\transp 
+%     = V\Sigma_1^2 V\transp 
+% \]
+% Note that, in general, $\Sigma$ is not square (has same shape as $A$), so we define here $\Sigma_1^2=\Sigma\transp \Sigma$ as the diagonal square matrix of size $n\times n$ with the diagonal of $\hat\Sigma$ squared. Note also that, in the case $n<m$, there are extra zeros at the end of the diagonal.
+
+% Now, repeat the same with $AA\transp$:
+% \[AA\transp 
+%     = \cdots
+%     = U\Sigma_2^2 U\transp 
+% \]
+
+% $\Sigma_1^2\in\RR^{n\times n}$ and $\Sigma_2^2\in\RR^{m\times m}$ are both square and diagonal, one of them may have extra zeros at the end of the diagonal when $m\neq n$, and the rest of the diagonal is the same.
+
+% Comparing these expressions with the orthogonal diagonalizations, we see that those are orthogonal diagonalizations, for $V=V_*$ and $U=U_*$.
+
+% Therefore: $A=U\Sigma V\transp$ is SVD iff we have the above eigendecompositions with $V=V_*$ and $U=U_*$ and $\Lambda$, $\Lambda^\prime$ containing all the squares of the singular values (one of them, possibly with extra zeros).
+
+% Therefore (ignoring the possible extra zeros) $\sigma_i^2$ are the eigenvalues of both $AA\transp$ and $A\transp A$.
+
+% The question of the uniqueness of SVD is then equivalent to the uniqueness of these orthogonal diagonalizations.
+
+[TODO: finish this; the argument is that there is only ambiguity when there are multiple eigenvalues; otherwise the eigenspaces are all dimension 1 and the sign of the eigenvectors is the only degree of freedom (in the complex case, the choice is in the whole unit circle instead of just a sign ).]
+
+
+% In the SVD we are looking for $\bm v_i$, $\bm u_i$ and $\sigma_i$, such that:
+% \[
+%     A\bm v_i = \sigma_i \bm u_i, \quad i\in\{1, ..., N\}, \quad N = \min(m,n)
+% \]
+
+% \subsection*{Full SVD}
+% % Now we assume the case $m\ge n$ (thin matrix $A$).
+
+% If we complete the basis in the domain (used in the full SVD) we need to use $\sigma_i=0$, so we forming a base of the null space:
+% \[
+%     A \bm v_i = \bm 0, \text{ for } i > r
+% \]
+
+
+% Then:
+% \[
+% A\transp A =
+%     V \Sigma\transp U\,
+%     U\transp \Sigma  V\transp
+%     =
+%     V (\Sigma\transp \Sigma)  V\transp
+% \]
+
+% This can be seen as an eigendecomposition of $A\transp A$: $\Sigma\transp \Sigma = (\sigma_i^2)$ the eigenvalues, and $\bm v_i$ are the corresponding eigenvectors.
+
+% Similarly:
+% \[
+% A A\transp =
+%     \cdots
+%     =
+%     U \Sigma\Sigma\transp U\transp
+% \]
+% Then, $\bm u_i$ are the eigenvectors of $A A\transp$ and the eigenvalues are again $\sigma_i^2$. (We will ignore this part).
+
+% If $\sigma_i$ is repeated we have ambiguity in the choice of the basis.
+
+
+
+% `[Left and right singular vectors, singular values]
+
+% [Question: case n > m ->
+%  if in m > n need to add columns to U and rows to Sigma,
+%  should we add instead rows to VH and cols to Sigma??]
+
+% [Reduced SVD/thin SVD/etc):
+% Study shape of U and Sigma (square when?)
+% ]
+
+% [
+% Lec3
+% --> SVD as change of bases
+% ]
+
+% [If A is full rank:
+%  -> Overdetermined system is incompatible.
+%  -> Underdetermined system is comp. indeterminate (infinite solutions)
+% ]
+
+% [
+% Number of nonzero singular values = rank(A)
+% ]
+
+% [
+% $Range(A) = span{u_1, ..., u_r}$
+% $Null(A) = span{v_{r+1}, ... v_{n}}$
+% ]
+
+% [
+% Prop:
+
+% For SVD $U\Sigma V\transp$, the elements in $\Sigma$ are indeed the singular values of $A$ [proof (by induction??)].
+% ]
+
+
+% [
+% Fundamental property:
+% [if m>=n] Singular values of A are the Eigenvalues of ATA.
+
+% [if n<m] use AAT
+% ]
+
+
+\newpage
+\addsec{SVD properties}
+
+\begin{itemize}
+\item
+If $D$ is diagonal with nonnegative values in descending order, its SVD is simply $I D I$.
+\item
+If $D$ is diagonal with nonnegative values, its SVD is $P D_{*} P\transp$, with $D_*$ same as $D$ but with the diagonal in descending order, and $P$ a permutation matrix (is orthogonal).
+\item
+If $D$ is diagonal and real, its SVD is $P_1 D_{*} P_2\transp$, with $D_*$ same as $D$ but with the absolute values of the diagonal of $D$ in descending order, and $P_1$, $P_2$ are generalized permutation matrices that can have $-1$ instead of $+1$ (can be proven orthogonal).
+\item
+(Consequence of orthogonal/unitary invariance of  $U$ and $V\transp$):
+\[\normtwo{A} = \normtwo{\Sigma} = \sigma_1 = \max \sigma_i\]
+\[\normfrob{A} = \normfrob{\Sigma} = \sqrt{\sum_i \sigma_i^2}\]
+\item
+$
+    \rank(A) =
+    \rank(\Sigma) =
+    \text{number of nonzero $\sigma_i$}
+$
+\item $A$ is full rank iff all singular values are nonzero ($\rank(A) = \min(m,n)$).
+
+\item
+The nonzero singular values $\sigma_i$ of $A$ are the square roots of the eigenvalues of $A^*A$ and $AA^*$. Proof: just expand $A^*A$ with the SVD of $A$ and obtain a similarity relation.
+
+\item
+The singular values $\sigma_i$ of $A$ are exactly the eigenvalues of $A^*A$ (if $m\ge n$) or $AA^*$ (if $n\ge m$).
+
+
+\item If $A$ is square: $|{\det}(A)| = |{\det}(\Sigma)| = |\prod \sigma_i| = \prod \sigma_i$
+
+\item
+If $A=A^*$ (Hermitian, including real symmetric), then $\sigma_i = |\lambda_i|$.
+
+Proof: symmetric is always diagonalizable (orthogonally and with real eigenvalues), therefore: \[
+    A
+    = Q\Lambda Q^* =Q \,\mathrm{abs}(\Lambda) \mathrm{sgn}(\Lambda)\, Q^*
+    = Q\, \mathrm{abs}(\Lambda) \,(Q\,\mathrm{sgn}(\Lambda))^*
+\]
+We can get a valid a SVD out of this, because:
+\begin{itemize}
+    \item {} $Q\,\mathrm{sgn}(\Lambda)$ is unitary
+    \item {} The descending order of $\sigma_i$ because the order of $\lambda_i$ can be chosen arbitrarily in the diagonalization (because permutation matrices are unitary).
+\end{itemize}
+
+\item If $A$ is symmetric positive (semi)definite (SPSD), then the SVD with $U=V$ exists and is a valid diagonalization. Reason: SPSD is normal with nonnegative eigenvalues, and the eigenvalues in the diagonalization can be chosen in descending order.
+
+\item Let $r=\rank(A)$, then 
+\[
+   \left\{
+   \begin{array}{lcl}
+        \sspan(\bm v_{r+1}, \,...,\, \bm v_{n}) &=& \Ker(A)
+        \\
+        \sspan(\bm u_1, \,...,\, \bm u_r) &=& \range(A)
+        \\
+        \sspan(\bm u_{r+1}, \,...,\, \bm u_{m}) &=& \range(A)^\perp
+   \end{array}
+   \right.
+\]
+
+
+\item Because $\Sigma$ is diagonal, the SVD can be written as a sum of outer products:
+\[
+A = U\Sigma V\transp = \sum_{i=1}^N \bm u_i \sigma_i \bm v_i\transp
+\]
+
+% \item 
+
+\end{itemize}
+
+\subsection*{Solving linear systems using SVD}
+
+Assume that the system $A\bm x=\bm b$ has at least one solution (for the no-solutions case, use least squares method).
+
+\subsubsection*{Overdetermined linear system}
+
+Assume $m>n$. Consider the change of bases given by the full SVD.
+\[
+A\bm x = \bm b; \quad A = U\Sigma V\transp; \quad
+\overline{\bm b} = U\transp \bm b;\quad \overline{\bm x} = V\transp \bm x
+\]
+\[
+A\bm x = \bm b \implies
+\Sigma V\transp {\bm x} = U\transp\, {\bm b}
+\implies
+\boxed{\Sigma \overline{\bm x} = \overline{\bm b}}
+\]
+
+Because $m>n$:
+\[
+\Sigma = \begin{pNiceMatrix}
+    \Sigma_1\\0_{(m-n)\times n}
+\end{pNiceMatrix}
+\]
+
+For the case $A$ full rank (implies $\Sigma_1^{-1}$ exists), there exists a solution iff:
+\[
+\overline{\bm b} = \begin{pNiceMatrix}
+    \overline{\bm b}_1\\ \bm 0
+\end{pNiceMatrix}
+\]
+
+\subsubsection*{Underdetermined linear system}
+
+Assume $m<n$.
+\[
+A\bm x = b
+ \implies
+  \Sigma \overline{\bm x}
+  = \overline{\bm b}
+\]
+\[
+\Sigma=\begin{pNiceMatrix}
+    \Sigma_1 & 0_{m\times (n-m)}
+\end{pNiceMatrix}
+\]
+
+For the case $A$ full rank (implies $\Sigma^{-1}$ exists) the nonunique solution is given by:
+\[
+\overline{\bm x} = \begin{pNiceMatrix}
+    {\Sigma}_1^{-1}\, \overline{\bm b}\\ \bm t
+\end{pNiceMatrix}
+\]
+
+For all $\bm t \in \RR^{n-m}$.
+
+\newpage
+\addsec{Projections}
+
+A projector or projection is an idempotent matrix/lin.\@ operator
+(must be square):
+\[
+    P = P^2
+\]
+Elements in $\range(P)$ are kept invariant (are eigenvectors with $\lambda_i=1$):
+\[
+    \bm x\in\range(P) \implies
+    P \bm x^\prime = \bm x \implies
+    P^2 \bm x^\prime = P \bm x \implies
+    P \bm x^\prime = P \bm x \implies
+    \bm x = P \bm x
+\]
+Note that this does \emph{not} imply that $\bm x = \bm x^\prime$ or that $\bm x^\prime\in \range(P)$; but only that, once applied, the subsequent applications of $P$ leave $\bm x$ intact.
+
+Visual idea: ``cast'' a light on a point vector $\bm v$ to produce a ``shadow'' ``onto'' the surface of the range subspace. The ``shadow'' is $P\bm v$, called projection of the vector $\bm v$.
+
+We say that $P$ projects ``onto'' $\range(P)$ ``along'' $\Ker(P)$.
+
+The projection of the ``projection error''/``residual component $\bm r$'' is zero (you cannot project anything that could not be projected before). Proof:
+\[
+    P(P\bm v -\bm v) = P^2 \bm v - P\bm v = P\bm v - P\bm v = \bm 0
+\]
+
+Thus: \[\boxed{P\bm v - \bm v \in \Ker(P)}\]
+
+We can interpret $P\bm v - \bm v$ as the segment that joins the point $\bm v$ and its projection $P \bm v$, and, depending on $P$, it may or may not be perpendicular to the ``surface'' $\range(P)$. % In fact, the direction of $P\bm v - \bm v$ may not be constant for different $\bm v$.
+
+All the points on the line that joins $\bm v$ with $P\bm v$ end up in $P\bm v$. Those are the vectors of the form $\bm w = P \bm v + \lambda (\bm v - P\bm v),\, \forall \lambda\in\RR$. Proof: 
+\[
+P\bm w =
+    P(P \bm v + \lambda (\bm v - P\bm v))
+    = P \bm v + \lambda (P\bm v - P\bm v)
+    = P \bm v
+\]
+
+Complementary projection: $I-P$.
+\[
+    \text{It is a valid projection: $(I-P)^2 = I-P-P+P^2 = I-P$.}
+\]
+$I-P$ projects along $\range(P)$ onto $\Ker(P)$:
+\begin{gather*}
+\Ker(P) = \range(I-P) \\
+\Ker(I-P) = \range(P)
+\end{gather*}
+
+Proof:
+\begin{itemize}
+    \item (for $\bm v\neq 0$) $\bm v \in \Ker(P) \implies P\bm v = \bm 0 \implies
+    (I-P)\bm v = \bm v - P\bm v= \bm v - \bm 0\neq \bm 0$
+    \item $\bm v^\prime\in \range(I-P) \implies \bm v^\prime = (I-P)\bm v = \bm v - P\bm v \implies P \bm v^\prime = \bm 0 \implies \bm v^\prime \in \Ker(P)$
+\end{itemize}
+
+There is no common nonzero vector: $\Ker(P)\cap\range(P) = \{\bm 0\}$. Proof: \[(I-P)\bm v = P\bm v = \bm 0 \implies \bm v - \bm 0 = \bm 0.\]
+
+Then $P$ and $I-P$ divide $\RR^n$ into two complementary subspaces $S_1 \cap S_2 = \{\bm 0\}$, as in the direct sum: $S_1 \oplus S_2$. Therefore, they decompose each vector uniquely in sum of two vectors that are in $S_1$ and $S_2$: \[\bm s = \bm s_1 + \bm s_2\]
+
+Proof:
+\begin{gather*}
+   \bm v = \bm v_1 +\bm v_2  = \bm v_1^\prime + \bm v_2^\prime 
+   \\
+   \left\{
+   \begin{aligned}
+        P\bm v &= P(\bm v_1 +\bm v_2) =  \bm v_1 + \bm 0 = \bm v_1
+        \\
+        P\bm v &= P(\bm v_1^\prime + \bm v_2^\prime ) =  \bm v_1^\prime + \bm 0 = \bm v_1^\prime
+   \end{aligned}
+   \right\}
+   \implies  \bm v_1  = \bm v_1^\prime 
+   \implies \bm v_2  = \bm v_2^\prime 
+\end{gather*}
+
+And, conversely, any two complementary subspaces (their direct sum is $\RR^n$) define a pair of complementary projections.
+
+If $S_1 = S_2^\perp$ (subspaces with pairwise orthogonal vectors), then $P$ is called ``orthogonal projection''. (Note that $P$ is almost always not an ``orthogonal matrix'' itself, because it is generally not invertible).
+
+It can be proven that a projection $P$ is orthogonal iff:
+\[\boxed{P = P\transp} \quad (P = P^*\text{ for complex spaces).}\]
+
+The orthogonal projection ``onto'' a single vector $\bm u$ (1D subspace) is defined by its outer product:
+\[
+P_{\bm u} = 
+\frac{\bm u \bm u\transp}{\bm u\transp\bm u}
+= \frac{\bm u \bm u\transp}{\displaystyle\normtwo{\bm u}^2} =
+    \hat{\bm u} \hat{\bm u}\transp
+\]
+
+The orthogonal projection ``along'' a single vector $\bm u$ is then:
+\[
+P_{\bm u^\perp} = I - \hat{\bm u} \hat{\bm u}\transp
+\]
+Alternative expression (useful for QR decomposition):
+\[
+\bm x \mapsto
+P_{\bm u^\perp}\, (\bm x)
+=
+    \left(
+        I - \frac{\bm u \bm u\transp}{\bm u\transp\bm u}
+    \right)\,\bm x
+=
+        \bm x - \underbrace{\left(
+        \frac{\bm u\transp \bm x}{\bm u\transp\bm u}
+        \right)}_{\text{scalar}}\, \bm u
+\]
+
+Orthogonal projection ``onto'' vector subspace spanned by orthonormal basis (columns of matrix $\hat{Q}$):
+\[ 
+\hat Q = (\bm q_1, \bm q_2, \dots, \bm q_r) \implies
+\boxed{
+    \bm v \mapsto P \bm v= \sum_{i=1}^r (\bm q_i \bm q_i \transp) \bm v
+}\implies 
+\boxed{
+    P = P_{\range(\hat Q)} = \hat Q \hat Q\transp
+}
+\]
+
+Orthogonal projection ``onto'' range of an arbitrary full column rank matrix $A$:
+\[
+\boxed{
+    P_{\range(A)} = A (A\transp A)^{-1} A\transp
+}
+\]
+The matrix $A^\dagger = (A\transp A)^{-1} A\transp$ is the Moore–Penrose pseudoinverse (for the full column rank case), and is a \emph{left} inverse, meaning that $A^\dagger A = I$.
+
+Therefore: \[ 
+\boxed{
+    P_{\range(A)}
+    = A A^\dagger
+}\]
+
+\addsec{QR factorization}
+
+Goal: decompose $A\in\RR^{m\times n }$ as
+\[
+    A = QR
+\]
+with $Q$ orthogonal (square) and $R$ upper triangular (same size as $A$).
+
+\subsection*{Gram-Schmidt}
+
+% https://www.math.uci.edu/~ttrogdon/105A/html/Lecture23.html
+
+[Algorithms for classical and modified Gram-Schmidt (and construction by multiplication by R)]
+
+[
+Classical is numerically unstable because ...
+
+Modified Gram-Schmidth -> Multiple vi summed "in parallel" (requires more space unless the input can be overwritten), on each iteration j the last term of vj is summed so it is normalized producing qj and used for the following iterations.
+
+Relation to projection matrices:
+\[
+\bm v_j =
+    \bm a_j - P_{\bm q_1} \bm a_j 
+    - P_{\bm q_2} \bm a_2 -
+    \cdots - P_{\bm q_{j-1}} \bm a_j
+    =
+    (I - \hat{Q}_{j-1} \hat{Q}_{j-1}\transp)\,\bm a_j
+\]
+
+$(I - \hat{Q}_{j-1} \hat{Q}_{j-1}\transp)$ is the complementary projection of $P_{\hat{Q}_{j-1}}$ onto 
+]
+
+\subsection*{Householder}
+
+Main idea: build a reflection out of an orthogonal projection onto a hyperplane $U$ (perpendicular to a vector $\bm v$). Note that $U$ is a subspace of dimension  $n-1$.
+    
+An orthogonal projection `along' the vector $\bm v$, and `onto' the hyperplane $U$, has the matrix: \[ P_U = P_{\bm v^\perp} = I - \frac{\bm v\bm v\transp}{\bm v\transp\bm v} \]
+    
+    Now, we build a Householder reflection by adding twice the difference between the input vector $\bm x$ and projected vector $P_{\bm v^\perp}\bm x$:
+    \[
+        H_{\bm v}\bm x = \bm x + 2\, ( (P_{\bm v^\perp}\bm x) - \bm x)
+        \implies
+        H_{\bm v}
+        =
+        I + 2\, (P_{\bm v^\perp} - I)
+        =
+        \boxed{
+            I - 2\, \frac{\bm v\bm v\transp}{\bm v\transp\bm v}
+        }
+    \]
+A target vector $\hat{\bm a} =\pm\norm{\bm a}\bm e_1$ (with all zero coordinates, except the first one) can be reached by a suitable selection of the hyperplane $U$: in particular $\bm v=\bm a - \hat{\bm a}$ is chosen, so that $H_{\bm v} \bm a = \hat{\bm a}$.
+
+[TODO: proof (this one is complicated...)]
+    
+The repeated application of this technique for each column of $A$, using one reduced dimension each time, results in an upper triangular matrix $R$.
+
+Properties of any Householder reflection $H =H_{\bm v}$:
+\begin{itemize}
+    \item It is symmetric (/Hermitian): $H=H\transp$.
+    \item It is orthogonal (/unitary): $H^{-1}=H\transp$; columns form an orthonormal basis.
+    \item It is its own inverse: $H^{-1} = H$. Therefore we have: $H^2 = I$ (in group theory lingo, we say that $\mathrm{Order}(H)=2$).
+    \item It has the eigenvalue  $-1$ with multiplicity $1$ and eigenvector $\bm v$ (eigenspace $\sspan(\bm v)$, with $\mu_g(-1) = \mu_a(-1) = 1$).
+    \item It has the eigenvalue $+1$ with multiplicity $n-1$ and the eigenvectors are all vectors $\bm w$ in the hyperplane $U$; that is, any vector $\bm w$ such that $\bm w\perp \bm v$ (eigenspace $(\sspan(\bm v))^\perp$, with $\mu_g(1) = \mu_a(1) = n-1$).
+\end{itemize}
+
+
+[Householder (QR construction by multiplication by $Q$), 
+
+Columns of $Q$ end up being a basis of $\range(A)$
+]
+
+\subsection*{Givens}
+
+[Givens rotations magic...]
+
+[Givens is, in general less efficient that Householder, but is still very useful for the case that the original matrix already had many zeros (sparse) at known locations.]
+
+\addsec{Generalized inverses}
+
+Generalize $A^{-1}$ for singular (square) matrices and rectangular ones.
+
+Properties:
+
+\begin{enumerate}
+    \item $A A^\dagger A = A$
+    \item $A^\dagger A A^\dagger = A^\dagger$
+    \item $(A A^\dagger)\transp = A^\dagger A$
+    \item $(A^\dagger A)\transp = A A^\dagger$
+\end{enumerate}
+
+[Projection using (1,4)]
+
+[Minimal norm solution is not unique and least squares solution is not unique, but solution that is both minimal norm AND least squares IS unique.]
+
+\subsection*{Moore-Penrose pseudoinverse}
+
+It is the unique (1,2,3,4)-inverse.
+
+From property (1):
+\[
+    P_{\range(A)} = AA^\dagger
+\]
+\[
+    P_{\range(A)}^2 = P_{\range(A)} \quad \text{(idempotent, a valid projection matrix)}
+\]
+And also, using property (3):
+\[
+    P_{\range(A)} = P_{\range(A)}\transp \quad \text{(the projection is orthogonal)}
+\]
+
+If $A$ has $m\ge n$ and $A$ is full rank, then:
+\begin{itemize}
+    \item $A^\dagger = (A\transp A)^{-1}A\transp$
+
+    (the inverse $(A\transp A)^{-1}$ exists because $A$ is full column rank)
+    \item $A^\dagger A = I$ ($A^\dagger$ is left inverse)
+    
+    Proof: $A^\dagger A = (A\transp A)^{-1}A\transp A = I$
+\end{itemize}
+
+For SVD: $A=U\Sigma V\transp$, then
+\[
+    A^\dagger = V \Sigma^\dagger U\transp
+\]
+
+\begin{itemize}
+    \item
+    If $m\ge n$:
+    \[\Sigma^\dagger = 
+    \begin{pNiceMatrix}
+    \hat\Sigma^\dagger & 0 
+    \end{pNiceMatrix}
+    \in \RR^{n\times m}
+    \]
+    \[\hat\Sigma^\dagger = 
+    \diag(\sigma_1^\dagger, ..., \sigma_n^\dagger)
+    \in \RR^{n\times n}
+    \]
+    \item
+    If $m< n$:
+    \[\Sigma^\dagger = 
+    \begin{pNiceMatrix}
+    \hat\Sigma^\dagger \\ 0 
+    \end{pNiceMatrix}
+    \in \RR^{n\times m}
+    \]
+    \[\hat\Sigma^\dagger = 
+    \diag(\sigma_1^\dagger, ..., \sigma_m^\dagger)
+    \in \RR^{m\times m}
+    \]
+\end{itemize}
+
+Useful property!: If $\hat Q\in\RR^{m\times n}$ is \emph{semi}-orthogonal ($m>n$), then:
+\[
+    \boxed{\hat Q^\dagger = \hat Q\transp}
+\]
+(this is because $(Q\transp Q)^{-1} = (I)^{-1}= I$)
+
+\addsec{Least Squares}
+For the system of equations $A\bm x = \bm b$, the residual/error vector is defined as:
+\[\bm r = \bm b - A\bm x\]
+This system may have any number of solutions (one, zero or infinite).
+
+Now, we impose $\bm r$ to be orthogonal (i.e.\@ \emph{normal}) to $\range(A)$ by forcing $\bm r\in \Ker(A\transp)$; then, we call ``solution'' $\bm x^*$ to a vector $\bm x$ that satisfies this property:
+\[ A\transp \bm r =
+A\transp (A\bm x^*-\bm b) = \bm 0
+\implies
+\boxed{A\transp A\bm x^* = A\transp \bm b}
+\]
+The equations of this system are called \emph{normal} equations (AFAIK, the term \emph{normal} here refers to orthogonality). Also, note that $A\transp A$ is a \emph{normal matrix} because it is symmetric.
+
+Let's assume $A$ to be full column rank (implying also $m\ge n$), then $A\transp A$ is also full rank (and invertible). This also implies that $\bm x^*$ is unique and that it is an exact solution only when $A$ is square ($m=n$).
+
+This can be expressed in terms of the Moore-Penrose pseudoinverse:
+\[
+\bm x^* = A^\dagger \bm b = (A\transp A)^{-1}A\transp \bm b
+\]
+
+Using the properties of $A^\dagger$, it can be shown that $\bm x^*$ is LS solution, meaning that:
+\[
+\bm x^* = \arg\min_{\bm x} \normtwo{\bm b - A\bm x}
+\]
+([TODO: check this claim] if $A$ was not full rank, there are possibly multiple LS solutions; using the properties of $A^\dagger$, it can be shown that $\bm x^*=A^\dagger \bm b$ is the one with minimal norm.)
+
+Now, let's see how this is related to the orthogonal projection onto $\range (A)$, which is \[P=AA^{\dagger}.\]
+
+% . But, in particular for $\normtwo{\bm r}$ minimized (i.e.\@ least squares solution) and then $\normtwo{\bm x^*}$ and .
+
+% Use the orthogonal projection $P$ that maps ``into'' range of $A$ as follows:
+% \[A\bm x^* = P\bm b \]
+
+% Note that, by this choice $A\transp \bm r=\bm 0$, that is, $\bm r\perp \range(A)$ (use $A^*$ instead of $A\transp$ for the complex case).
+
+
+We can show that the following system:
+\[
+P\bm b = A\bm x^*
+\]
+has the same solution $\bm x^* = A^\dagger\bm b$. Geometrically it makes intuitive sense that among all the projections onto $\range(A)$, the orthogonal projection is the one that achieves the minimum distance (residual).
+
+Proof (assume $A$ full column rank and $m\ge n$):
+\[
+A\bm x^* = P\bm b
+\implies
+A\bm x^* = AA^\dagger \bm b
+\implies
+A^\dagger A\bm x^* = A^\dagger AA^\dagger \bm b
+\]
+
+Now, using $A^\dagger A=I$ and $A^\dagger AA^\dagger = A^\dagger$:
+\[
+A\bm x^* = P\bm b
+\implies
+\boxed{\bm x^* = A^\dagger \bm b}
+\]
+
+\subsection*{Methods to solve LS}
+[Only the third one works if $A$ is not full rank]
+
+\begin{itemize}
+    \item Normal equations: $A\transp A=A\transp b$; but solving it directly is inefficient.
+    
+    Instead, use Cholesky $A\transp A = L L\transp$, with $L$ lower triangular. Solve two systems: one for $L$ lower triangular (back-subst) and next for $L\transp$ upper triangular (forward-subst).
+    
+    This requires for $A$ to be full rank; otherwise the solution is not unique (the Cholesky decomposition is also not unique). The pseudoinverse would not have the expression $A^\dagger = (A\transp A)^{-1}A\transp$ (in particular $(A\transp A)$ is not invertible).
+    
+    \item Reduced QR: use $A=\hat{Q}\hat{R}$ and algebra magic to obtain:
+    \[A^\dagger = \cdots = \hat R^{-1}\hat Q\transp\]
+    
+    Then solve via back substitution.
+    
+    \item Reduced SVD: use SVD of $A$ and algebra magic to obtain:
+    \[
+    A =\hat U\hat\Sigma V\transp
+    \implies
+    A^\dagger = V\hat\Sigma^{-1}\hat U\transp\]
+    
+    Note: here we are using the ``thin'' version of the ``reduced'' SVD, meaning that $\hat\Sigma$ is square; also we assume that $A$ is \emph{thin} or square ($m\ge n$).
+    
+    Then solve using orthogonal transposes and diagonal inverse.
+
+    In principle, this would only work for $A$ full rank, but, for this method, there is a straightforward generalization: instead of $\hat \Sigma^{-1} = \diag(\sigma_i^{-1})$, use the pseudoinverse of $\hat\Sigma$, defined as:
+    \[
+        \hat\Sigma^{\dagger} = \diag(\hat\sigma^{\dagger}_i)
+        ,\quad
+        \hat\sigma^{\dagger}_i =
+        \begin{cases}
+         \sigma_i^{-1}, & \text{ if } \sigma_i\neq 0\\
+         0, & \text{ if } \sigma_i = 0
+        \end{cases}
+    \]
+
+    
+    
+
+\end{itemize}
+
+\newpage
+
+\addsec{Problem conditioning}
+
+Idea: a nonlinear ``problem'' $\bm f(\bm x^*)$, with $\bm f:\bm X\to \bm Y$ is well-conditioned when difference $\norm{\bm f(\bm x^*+\delta \bm x)-\bm f(\bm x^*)}_Y$ is small for small $\norm{\delta \bm x}_X$.
+
+Define: $\delta \bm f = \bm f(\bm x^*+\delta \bm x)-\bm f(\bm x^*)$ (approximated by a Taylor expansion).
+
+Note: norms $\norm{\cdot}_X$, $\norm{\cdot}_Y$ can be different and even the vector spaces of $\delta \bm x$ and $\delta\bm f$ may be different (e.g.\@ $\RR^n$, $\RR^m$).
+
+Definition of absolute condition number (for a particular pair of norms):
+\[
+\hat{\kappa}(\bm x^*)
+=
+\lim_{\delta\to 0^+}\,\,\,
+\sup_{\norm{\delta\bm x}_X\le\delta}
+\frac{
+\norm{\delta \bm f}_Y
+}{
+\norm{\delta \bm x}_X
+}
+\]
+
+If $\bm f$ is a linear transformation ($\bm f(\bm x) = A\bm x$), then $\hat{\kappa}$ is the induced matrix norm (the inner expression does not depend on $\delta$). Reason: just notice that for $\delta\neq 0$ the supremum does not depend on $\delta$.
+
+First order Taylor expansion: $
+\delta \bm f = \bm f(\bm x^*+\delta \bm x)-\bm f(\bm x^*)
+\approx \bm f^\prime(\bm x^*)\, \delta \bm x
+$
+
+If $f$ is differentiable, this results in the Jacobian of $f$:
+\[
+\hat{\kappa}(\bm x^*)
+=
+\norm{J(\bm x^*)}_{X,Y}
+\]
+
+Definition of relative condition number (possible when $\bm f(\bm x^*)\neq \bm 0$):
+\[
+\kappa(\bm x^*)
+=\lim_{\delta\to 0}
+\sup_{\norm{\delta \bm x}_X \le \delta}
+\frac{\phantom{..}
+\displaystyle
+    \frac{\norm{\delta \bm f}_Y}{\norm{\bm f(\bm x^*)}_Y}
+\phantom{..}
+}{\phantom{..}
+\displaystyle
+    \frac{\norm{\delta \bm x}_X}{\norm{\bm x^*}_X}
+\phantom{..}
+}
+=
+\frac{\phantom{..}
+    \hat\kappa(\bm x^*)
+}{\phantom{..}
+\displaystyle
+    \frac{\norm{\bm f(\bm x^*)}_Y}{\norm{\bm x^*}_X}
+\phantom{..}
+}
+\]
+
+If $\bm f$ is differentiable, we obtain:
+\[
+{\kappa}(\bm x^*)
+=
+\frac{
+    \norm{J(\bm x^*)}_{X,Y}
+}{\displaystyle
+\frac{\norm{\bm f(\bm x^*)}_X}{\norm{\bm x^*}_Y}}
+\]
+
+Rule of thumb: problem is ill conditioned when ${\kappa}(x^*) \ge 10^6$ (this is possibly compared to machine precision of 15 decimals for double precision).
+
+Example: difference of two numbers is ill-conditioned if the are close. (Note: the Jacobian of a scalar function is just the gradient vector). $\kappa$ is easy to compute in the infinity norm.
+\[f(x_1, x_2) = x_1 - x_2 \implies J = \left(
+1, -1
+\right) \]
+\[
+\kappa = \kappa_{\infty,\infty}
+=
+\frac{
+    \norm{J}_{\infty,\infty}
+}{\displaystyle
+\frac{\norm{f(x_1, x_2)}_\infty}{\norm{(x_1, x_2)}_\infty}}
+=
+\frac{
+    2
+}{\displaystyle
+\frac{|x_1 - x_2|}{\max{(x_1, x_2)}}}
+\implies
+\boxed{
+    \kappa = \frac{2}{|x_1 - x_2|}\,\max(x_1, x_2)
+}
+\]
+
+Example: polynomial root finding is very ill-conditioned (small changes in coeffs lead to big changes), in fact, for the 2nd order decomposition with 2 multiple roots is $\kappa = \infty$.
+
+\subsection*{Matrix problems conditioning}
+
+\subsubsection*{Problem: Matrix by vector product}
+
+Compute relative $\kappa$ associated with the problem/operation $\bm f(\bm x) = A \bm x$, where we study the behaviour of perturbations on $\bm x$.
+
+It can be easily obtained (Jacobian of linear function):
+\[
+\kappa = \kappa(\bm x) =  \frac{\norm{A}\,\norm{\bm x}}{\norm{A\bm x}}
+\]
+
+So, $\kappa(\bm x)$ is large when $\bm x$ is close to a vector of $\Ker(A)$. (Note that $\kappa$ is not defined when $A\bm x=\bm 0$).
+
+Property for $A$ square invertible: \[\frac{\norm{\bm x}}{\norm{A\bm x}} \le \norm{A^{-1}} \]
+
+(\,\! Proof: $
+    \norm{\bm x} = \norm{A^{-1}\, A\, \bm x}
+    \le \norm{A^{-1}}\, \norm{A\, \bm x}
+$ \,\!)
+
+Then, we can write: \[\kappa \le \norm{A}\norm{A^{-1}} \]
+
+Or define $\alpha$:
+\[\alpha =
+\left.
+    \frac{\norm{\bm x}}{\norm{A\bm x}}
+        \middle /
+    \norm{A^{-1}}
+\right.    
+\]
+\[\kappa = \alpha \norm{A}\norm{A^{-1}} \]
+
+Where $\alpha$ depends on $\bm x$ and the selected norm.
+
+For the $2$-norm, it can be proven that equality ($\alpha=1$) is attained when $\bm x$ is proportional/collinear to a right singular vector ($\bm v_i$) corresponding to the smallest singular value ($\sigma_m$; must be nonzero as $A$ is invertible).
+
+\subsubsection*{Problem: solving a linear system}
+
+Assuming $A$ is square (system is \emph{exactly determined}) and invertible, consider the problem:
+\[
+    \bm f : \bm b \mapsto A^{-1}\bm b
+\]
+Observing the previous problem, this is exactly the same after swapping $A$ with $A^{-1}$ and $\bm x$ with $\bm b$; and we observe perturbations on $\bm b$.
+
+Therefore:
+\[
+\kappa = \kappa(\bm b) =  \frac{\norm{A^{-1}}\,\norm{\bm b}}{\norm{A^{-1}\bm b}}
+\]
+And also:
+\[\kappa \le \norm{A}\norm{A^{-1}} \]
+
+Or define $\beta$:
+\[\beta =
+\left.
+    \frac{\norm{\bm b}}{\norm{A^{-1}\bm b}}
+        \middle /
+    \norm{A}
+\right.    
+\]
+\[\kappa = \beta \norm{A}\norm{A^{-1}} \]
+
+Now, recall that $A^{-1}$ has the inverse singular values of $A$.
+
+Then for the $2$-norm, it can be proven that equality ($\beta=1$) is attained when $\bm b$ is proportional/collinear to a left singular vector of $A$ ($\bm u_i$) corresponding to the largest singular value of $A$ ($\sigma_1$).
+
+\subsubsection*{Problem: solving a linear system considering perturbations on $A$}
+
+Consider the same problem as before, where now $\bm b$ is fixed and $A$ is the input:
+\[
+    \bm f : A \mapsto A^{-1}\bm b
+\]
+
+[TODO: finish this]
+
+\subsubsection*{Matrix condition number}
+
+We found a tight upper bound for $\kappa$ in the last 3 problems. This bound is important for the study of stability of matrix algorithms so we define it as precisely the ``condition number of a matrix $A$'' (not of a particular problem):
+\[
+    \boxed{\kappa(A) := \norm{A}\,\norm{A^{-1}}}
+\]
+Note that $\kappa(A)\ge 1$ for any induced matrix norm:
+\[
+    \kappa(A) = \norm{A}\,\norm{A^{-1}} \ge \norm{A\, A^{-1}} = \norm{I} = 1
+\]
+(Note: this is NOT true for general submultiplicative norms, e.g.\@ take $\norm{A}_{\alpha} = \normfrob{A}/n$, where $n$ is the size of $A$ and $ \normfrob{\cdot}$ is the Frob norm, then this is a valid norm and is submultiplicative, but $\norm{I}_{\alpha}=\sqrt{n}/n\le 1$)
+
+For the 2-norm, it can be expressed as:
+\[
+\boxed{
+\kappa_2(A)
+    = \normtwo{A}\,\normtwo{A^{-1}}
+    = \frac{\sigma_1}{\sigma_n} \ge 1
+}
+\]
+In the geometrical interpretation of the SVD, $\kappa_2(A)$ could be seen as the output hyperellipse axial ratio.
+
+For $A$ not invertible or rectangular, define:
+\[\kappa(A) := \norm{A}\,\norm{A^{\dagger}}\]
+
+\subsubsection*{Conditioning of matrix eigenvalue problems}
+[TODO: check and rewrite all here]
+
+Property: $A$ with eigv $\lambda$ and $A+\delta A$ with eigv $\lambda + \delta \lambda$.
+
+Then: $|\delta \lambda| \le \normtwo{\delta A}$ with equality if $\delta A$ is multiple of identity matrix.
+
+As a consequence: $\hat{\kappa} =1$, $\kappa= \normtwo{A}/|\lambda|$.
+
+Matrix eigenvalue computation is ill-conditioned in general, but when it is symmetric, this becomes well-conditioned.
+
+From a given polynomial we can find a ``companion matrix'' for which it is the characteristic polynomial.
+
+%The usual case is $A\bm x=\bm b$, solve for $\bm x$ (output $f(x^*)$) given $A$ and $b$ (inputs $x^*$).
+
+\subsubsection{Conditioning of Least squares methods}
+
+...
+
+[TODO: condition number etc.]
+
+Normal equations, worse than SVD and QR.
+
+% [Recall that the projection onto range $A$ is $A\, A^\dagger$, and for projection onto range $\hat Q$ orthogonal is $\hat Q\hat Q\transp$ (the stuff to invert is identity)]
+
+%[TODO: proof that $\mathrm{range}(A) = \mathrm{kernel}(A\transp)^\perp$]
+
+% [Projection of $\bm b$ into the range of $A$ and then solve the resulting system]
+
+\newpage
+
+\addsec{LU decomposition and Gaussian elimination}
+The LU decomposition of a matrix $A$ is
+\[A = LU\]
+with $L$ lower triangular with ones in diagonal (a.k.a.\@ lower unitriangular), $U$ upper triangular.
+
+This variant is called Doolittle decomposition (in the Crout decomposition, $U$ is upper unitriangular and $L$ is lower triangular with arbitrary diagonal).
+
+It is obtained via Gaussian elimination (sequence of row transformations).
+\[
+A^{(0)} = A,\quad
+A^{(k)} = L_k A^{(k-1)},\quad
+A^{(n-1)} = U
+\]
+\[
+\implies A^{(k)} = L_{k}\cdots L_{2}L_{1}\, A
+\]
+\[
+\implies U = A^{(n-1)} = L_{n-1}\cdots L_{2}L_{1}\, A
+\]
+\setcounter{MaxMatrixCols}{20}
+\[
+L_k =
+\begin{pNiceMatrix}
+1 & \\
+&\Ddots \\
+\\
+&&1 & \\
+&&-\ell_{k+1,k}&  \\
+&&\Vdots & \\
+&&-\ell_{s,k}&  \\
+% &&\Vdots & \\
+&&\Vdots &&&&&\\
+&&-\ell_{n,k}&&&&&& 1\\
+\end{pNiceMatrix}
+\]
+Where:
+\[
+-\ell_{s,k} =
+-\frac{a_{sk}^{(k-1)}}{a^{(k-1)}_{kk}}
+,\quad
+k \in \{1, ..., n-1\}
+,\quad
+s \in \{k+1, ..., n\}
+\]
+Note that, for this to be feasible, the denominators  ${a^{(k-1)}_{kk}}$ must be nonzero. To begin with, $a_{11}$ must be nonzero; in fact, the denominators [TODO: add reference] are precisely the $n-1$ first ``leading minors'' (a.k.a.\@ ``principal minors'', those are the determinants of all the upper left square submatrices of $A$); this does NOT include the last determinant, $\det(A)$ itself, so this process may work for some singular matrices $A$.
+
+Define the vector:
+\[
+\bm \ell_k = (\underbrace{0,...,0}_{k}, \ell_{k+1,k}, ..., \ell_{s,k}, ..., \ell_{n,k})
+\]
+(the $k$-th position contains the last zero before $\ell_{k+1,k}$).
+
+Then:
+\[
+L_k = I - \bm \ell_k \, \bm e_k\transp
+\]
+The inverse transformation has matrix (also lower triangular):
+\[
+L_k^{-1} = I + \bm \ell_k \, \bm e_k\transp
+\]
+
+Proof:
+\[
+(I - \bm \ell_k \, \bm e_k\transp)
+(I + \bm \ell_k \, \bm e_k\transp)
+=
+I
++
+\bm \ell_k \, \bm e_k\transp
+\,(
+I
+-
+I+
+\bm \ell_k \, \bm e_k\transp)
+=
+I+
+\bm \ell_k \, \underbrace{
+    \bm e_k\transp \bm \ell_k}_{0} \, \bm e_k\transp
+= I
+\]
+
+Now, sequences of transformations in order do not modify $\bm \ell_k$:
+\[
+L_k^{-1} \, L_{k+1}^{-1} =
+I
+ + \bm \ell_k \bm e_k\transp
+ + \bm \ell_{k+1} \bm e_{k+1}\transp
+ + \bm \ell_{k}
+ \underbrace{\bm e_{k}\transp\bm \ell_{k+1}}_{0} \bm e_{k+1}\transp 
+=
+I
+ + \bm \ell_k \bm e_k\transp
+ + \bm \ell_{k+1} \bm e_{k+1}\transp
+\]
+
+Therefore:
+\[
+L=
+L_1^{-1} L_2^{-1}...
+L_{n-1}^{-1}
+=
+I +
+\sum_{k=1}^{n-1} \bm \ell_k \bm e_k\transp
+=
+\begin{pNiceMatrix}
+1 \\
+&1 \\
+\bm \ell_1 & &\Ddots \\
+& \bm \ell_2&& 1\\
+ &{~}&\Cdots&  \bm\ell_{n-1} & 1
+\end{pNiceMatrix}
+\]
+
+Warning on confusing sign convention: $L_k$ contains $-\bm\ell_k$ and $L_k^{-1}$ contains $+\bm\ell_k$, and $L$ is built using $L_k^{-1}$.
+
+\subsection*{Existence of LU decomposition}
+
+As mentioned before, this method only works when the $n-1$ ``leading minors'' are nonzero.
+
+But note that those are not \emph{all} the matrices that admit LU decomposition; for example, the zeros matrix can be decomposed with $U=0$ ($L$ can be chosen as \emph{any} lower unitriangular matrix), but there is always a zero in the denominator of the algorithm (even with pivoting).
+
+Nevertheless we have the following:
+\begin{itemize}
+    \item In the case that $A$ is full rank, $A$ admits LU factorization iff the ``principal minors'' are nonzero (now we can include the determinant of $A$, as $A$ is full rank). This is good news, as this is the only type of matrices that this method works on.
+    
+    In such case the described algorithm produces the unique decomposition.
+
+    \item If the rank of $A$ is $n-1$ this method still works, but the decomposition may not be unique (the method only produces only one of those decompositions).
+
+    \item In general, if $A$ is not full rank, the condition is more complicated.
+    
+    Whole story here: \url{https://arxiv.org/pdf/math/0506382.pdf}.
+\end{itemize}
+
+[TODO: mention gaussian elimination and complete system solving.
+Mention also backsubstitution. Explain memory savings using a single matrix.]
+
+\subsection*{Pivoted LU decomposition}
+
+To avoid the case where the $LU$ decomposition does not exist for an otherwise perfectly common invertible matrix (and a corresponding solvable system), we can permute the rows of the matrix; then the $LU$ decomposition is always feasible for regular $A$ (in fact, this should work for all square matrices $A$ with $\rank(A) \ge n-1$).
+
+Not only this makes the problem feasible in theory, but also, because of the choices available when selecting the pivots, it can be made numerically more stable.
+
+Recall that, for a permutation matrix $P$: pre-multiplication permutes the rows ($PA$) and post-multiplication permutes the columns ($AP$).
+
+There are two pivoting methods: partial pivoting and full pivoting.
+
+\subsubsection*{Partial pivoting}
+
+Partial (row) pivoting can be seen first as an row permutation applied before each column elimination, resulting in:
+    \[L_{n-1}P_{n-1}...L_{1}P_{1} A = U\]
+
+Each $P_k$ is very simple: only two rows below the diagonal are exchanged.
+    
+The optimal row choice (for stability) is to leave the largest element ``alive'' and annihilate the rest.
+    
+This can be rewritten as:
+\[
+    L_{n-1}P_{n-1} \cdots L_{1}P_{1} =
+    L_{n-1}^\prime \cdots L_1^\prime \, P_{n-1} \cdots P_{1}
+\]
+    
+Where: $L_{n-1}^{\prime} = L_{n-1}$, $L_{n-2}^{\prime} = P_{n-1} L_{n-1}P_{n-2}^{-1}$, ..., $L_1^\prime = P_{n-1}...P_1 L_1 P_1^{-1} P_{n-1}^{-1}$.
+    
+In general:
+\[L^\prime_k =
+    P_{n-1}P_{n-2}\cdots P_{k+1}\,
+    L_k\,
+    P_{k+1}^{-1}\cdots P_{n-1}^{-1}\,
+\]
+    
+Now, for the $\alpha$-th column, observe the following:
+\[
+    L_\alpha^\prime = P_\beta L_\alpha P_\beta^{-1}
+    , \text{ with } P_{\beta} = \prod_{\beta_i>\alpha} P_{\beta_i}
+    \,.
+\]
+
+The transformation done on $L_\alpha$ is to ``unpermute'' ($P_\beta^{-1}$) columns that are to the left of $\alpha$ (this does not affect the elements of $\bm\ell_\alpha$), and permute ($P_\beta$, with same pattern) rows of $L_\alpha$ below $\alpha$ (this only reorders elements of $\bm\ell_\alpha$ into $\bm\ell_\alpha^\prime$).
+
+Then, aside from reordering $\bm\ell_\alpha$, this has exchanged rows and then columns (in the reverse order) in the diagonal: as the latter changes leave the all-ones diagonal unaltered, the resulting matrix is $L^\prime_\alpha = I - \ell_k^\prime\bm e_k\transp$. So, the defining property of is $L_\alpha$ (i.e.\@ identity plus elements in $\alpha$-th column under diagonal) is preserved in $L^\prime_\alpha$.
+
+This argument can be summarized like this:
+\[
+    L^\prime_\alpha = 
+    P_\beta L_\alpha P_\beta^{-1}
+    =
+    P_\beta (I - \ell_k\bm e_k\transp) P_\beta^{-1}
+    =
+    P_\beta P_\beta^{-1} - P_\beta\ell_k\bm e_k\transp P_\beta^{-1}
+    =
+    I - \ell_k^\prime\bm e_k\transp
+\]
+
+Therefore, the decomposition
+\[
+    L_{n-1}P_{n-1} \cdots L_{1}P_{1} =
+    \underbrace{L_{n-1}^\prime \cdots L_1^\prime}_{L^{-1}}
+    \,
+    \underbrace{P_{n-1} \cdots P_{1}}_{P}
+\]
+is a product of a lower unitriangular matrix $L^{-1}$ (with lower part defined by the vectors $-\bm\ell^\prime_k$) and a permutation matrix $P$.
+
+Then, we have:
+\[
+    L^{-1} P A = U
+    \implies 
+    \boxed{
+        P A = L \,U
+    }
+\]
+
+With \[L = (L_{1}^\prime)^{-1} \cdots (L_{n-1}^\prime)^{-1}
+=
+    \begin{pNiceMatrix}
+    1 \\
+    &1 \\
+    \bm \ell_1^\prime & &\Ddots \\
+    & \bm \ell_2^\prime&& 1\\
+     &{~}&\Cdots&  \bm\ell_{n-1}^\prime & 1
+    \end{pNiceMatrix}
+.\]
+
+Implementation is similar as with no pivoting, but with some row/column permutations of the intermediate results, wherever it makes sense. The resulting permutation matrix $P$ is stored as a vector of $n$ indices.
+
+Existence of the decomposition $PA = LU$ is guaranteed for all $A$ square (although this method only works for \emph{some} matrices; but at least it works for all invertible matrices $A$ and also for $\rank(A)=m-1$).
+
+A similar method would be partial column pivoting, that uses column permutations instead of row permutations: we get $AP = LU$.
+
+Note: in some sources this decomposition is written as $A=P\transp LU$ (and in the case of column pivoting, $A=LUP\transp$). Note that a permutation matrix $P$ is orthogonal $P^{-1}=P\transp$.
+
+\subsubsection*{Complete pivoting}
+
+Introduces column pivoting matrices $Q_k$.
+\[L_{n-1}P_{n-1}...L_{1}P_{1}\, A\, Q_1 Q_2 ...Q_{n-1} = U
+\implies
+    \underbrace{L_{n-1}^\prime \cdots L_1^\prime}_{L^{-1}}
+    \,
+    \underbrace{P_{n-1} \cdots P_{1}}_{P}
+    \,
+    A
+    \,
+    \underbrace{Q_{1}Q_{2} \cdots Q_{n-1}}_{Q}
+    =
+    U
+\]
+\[
+\implies
+\boxed{
+    P A\, Q = L \,U
+}
+\]
+
+Not very used in practice, because of time-consuming pivot selection, in exchange for only marginal stability improvement.
+
+\subsection*{\texorpdfstring{$LDL\transp$}{LDLT} decomposition}
+
+For symmetric matrices for which the LU decomposition exists (consider without pivoting, for simplicity), the diagonals of $U$ in the LU decomposition can be factored out (if some are zero, there are degrees of freedom to choose some values [check this?]), to build the decomposition:
+\[
+    A = L D L\transp
+\]
+
+\subsection*{Cholesky decomposition}
+
+Taking the $LDL\transp$ decomposition of a positive semidef.\@ matrix $A$, the diagonal of $D$ has nonnegative elements, and we can write:
+\[
+A = L^\prime D L^\prime{}\transp 
+    =
+\underbrace{L^\prime D^{1/2}}_L 
+\underbrace{D^{1/2} L^\prime{}\transp}_{L\transp}
+=
+L \,L\transp
+\]
+
+If $A$ is pos.\@ def.\@ (strictly), then this decomposition is unique and the diagonals of $L$ are nonzero.
+
+If it is only pos.\@ semidef.\@ this decomposition also exists but it is never unique for $n>1$ [TODO: check this].
+
+Note that this decomposition always exists for positive semidef.\@ matrices.
+
+Also, for any (pos.\@ semidef.) matrix, the $LDL\transp$ decomposition can be directly obtained from a Cholesky decomposition and vice~versa.
+
+\subsection*{Shur form}
+Shur form/decomposition (exists for any matrix, not unique):
+\[
+    A = Q T Q\transp, \quad
+    \text{ with $Q$ orthogonal/unitary and $T$ upper triangular.}
+\]
+It gives an orthogonal similarity transformation, it is a generalization of the orthogonal diagonalization: $A = Q \Lambda  Q\transp$, which exists for normal matrices and, in particular, in the case of Hermitian/real symmetric matrices, the eigenvalues $\lambda_i$ are guaranteed to be real.
+
+\newpage
+\addsec{Eigenvalue problems}
+
+General assumption: $A$ is Hermitian (incl.\@ real symmetric). So, all eigenvalues $\lambda_i$ are real and it is always orthogonally diagonalizable (because Hermitian matrices are normal).
+
+
+[TODO Add pagerank]
+
+\subsection*{General structure of the eigenvalue algorithms}
+
+$A$ is symmetric, then $Q\transp A Q = \Lambda$ diagonal exists (in general $\Lambda$ would be triangular).
+
+But, because of fundamental issues (Abel's impossibility theorem), this cannot be done in a finite number of steps, as there is not an ``algebraic solution'' in general. All algorithms are iterative by necessity.
+
+The idea of the iterative algorithms is to build a sequence of orthogonal matrices $Q_i$ such that:
+\[
+Q^*_n Q^*_{n-1}...Q^*_1Q^*_2
+\, A\,
+Q_1 Q_1...Q_{n-1}Q_n \xrightarrow{\,(n\to\infty)\,} \Lambda
+\]
+Ideally, the convergence.
+
+The same algorithms used for general matrices are used for symmetric ones, with some simplifications where suitable.
+
+We can classify the methods as [TODO: rethink this]:
+\begin{enumerate}
+    \item Simple algorithms that produce eigenvector estimates: power iteration, inverse power iteration, inverse shifted power iteration.
+    
+    The corresponding eigenvalue is then obtained via the Rayleigh quotient.
+    
+    \item Rayleigh quotient iteration: combines simultaneously eigenvector and eigenvalue approximation (very fast).
+    
+    \item Practical algorithms: QR iteration (``pure'': wihout shifts; and ``practical'': with shifts), Arnoldi iteration method (used for sparse matrices).
+\end{enumerate}
+
+
+\subsection*{Companion matrix}
+
+[TODO: ...]
+
+
+\subsection*{Gershgorin circles}
+
+Gershgorin Theorem I: if $\lambda$ is eigenvalue of $A$, then there exists an index $i$ (corresponding to the $i$-th row of $A$), such that:
+\[
+    |\lambda - A_{ii}| \le
+    \sum_{j=1,\,j\neq i}^n |A_{ij}|
+\]
+
+In other words: every single eigenvalue must lie in at least one of the Gerschgorin disks (including the boundaries).
+
+Define the Gerschgorin disk associated with the $i$-th row of $A$ as:
+\[
+    D_i = \{z\in \CC:\,\, |z-A_{ii}|\le d_i\},
+    \text{ with } d_i = \sum_{j=1,\,j\neq i}^n |A_{ij}|
+\]
+That is: $D_i$ is a circle in $\CC$ centered at $A_{ii}$ with radius $d_i$.
+
+This also applies if we used the columns of $A$ instead of the rows (proven by using $A\transp$, which has the same eigenvalues as $A$ (same char-poly)).
+
+Gershgorin Theorem II: if the union $G_1$ of $k$ disks is disjoint from the union of the other $n-k$ disks, $G_2$, then there are exactly 
+(note: we can impose that the $k$ disks are non-concentric so that  eigenvalues are not allowed to be repeated).
+
+In particular: 
+the disjoint sets containing the unions of overlapping disks (non-concentric, meaning that $A_{ii}$ are all distinct), always contain exactly a number of eigenvalues equal to the number of such disks.
+
+\subsection*{Rayleigh quotient}
+Rayleigh quotient:
+\[
+    r(\bm x) = 
+    \frac{
+        \bm x\transp A \bm x
+    }{
+        \bm x\transp \bm x
+    }
+\]
+
+It gives an ``aproximation'' of an eigenvalue in the direction of $\bm x$.
+
+In the case that $\bm x = \bm q_i$ is an eigenvector (for $\lambda_i$):
+\[
+    r(\bm q_i) =
+    \frac{
+        \bm q_i\transp A \bm q_i
+    }{
+        \bm q_i\transp \bm q_i
+    }
+    =
+    \lambda_i
+    \frac{
+        \bm q_i\transp \bm q_i
+    }{
+        \bm q_i\transp \bm q_i
+    }
+    =
+    \lambda_i
+\]
+
+It can be proven that:
+\[
+    r(\bm x) = \arg\min_\alpha \norm{A\bm x - \alpha \bm x}
+\]
+
+[todo proof]
+
+And also:
+\[
+    \nabla r(\bm x) = 
+    \frac{2}{
+        \bm x\transp \bm x
+    }\,
+    (A\bm x - r(\bm x)\, \bm x)
+\]
+
+Then, any eigenvector $\bm x = \bm q_i$ is stationary point: $\nabla r(\bm q_i)=\bm 0$.
+
+Using Taylor expansion around $\bm q_i$: 
+\[
+    r(\bm x) - r(\bm q_i) = \OO(\normtwo{\bm x - \bm q_i}^2)
+\]
+Then, the eigenvalue estimation is \emph{quadratically accurate}.
+
+Alternative expression with $\bm x$ as linear combination of eigenvalues (note that this is always possible because $A$ is symmetric, hence diagonalizable):
+\[
+    r(\bm x) =
+    \frac{
+    \displaystyle
+        \sum_i^n \alpha_i \bm q_i
+    }{
+    \displaystyle
+        \sum_i^n \alpha_i^2
+    },
+    \quad \text{where }
+    \bm x = \sum_i \alpha_i \bm q_i
+    \quad
+    \text{ ($\alpha_i$ are unique coordinates of $\bm x$)}
+\]
+
+
+\subsection*{Power iteration}
+
+This is the simplest iterative method. It produces a sequence of eigenvector estimates $\bm v^{(k)}$ that should converge to the one corresponding to the largest eigenvalue (if it is unique in abs.\@ value).
+
+[todo two norm not needed, but useful for rayl quitient]
+
+Seed: $\bm v^{(0)}, \, \text{ with }\normtwo{v^{(0)}} = 1$
+
+At $k$-th iteration:
+\[
+    \bm w := A \bm v^{(k-1)}
+\]
+\[
+    \bm v^{(k)} := \frac{\bm w}{\normtwo{\bm w}}
+\]
+
+This is called power iteration because at the $k$-th iteration we have a vector $\bm v^{(k)}$ proportional to $A^k \bm v^{(0)}$.
+
+The eigenvalue estimate at the $k$-th iteration is given by the Rayleigh quotient:
+\[
+    \lambda^{(k)} := r(\bm v^{(k)}) = (\bm v^{(k)})\transp A \bm v^{(k)}
+\]
+(note that $\bm v^{(k)}$ is already normalized)
+
+To analyze convergence we write $\bm v^{(k)}$ as:
+\[
+    \bm v^{(k)} = c_k \lambda_1^k
+    \left(
+        \alpha_1 \bm q_1
+        + \sum_{i=2}^n
+        \alpha_i
+        \left(\frac{\lambda_i}{\lambda_1}
+        \right)^i
+        \bm q_i
+    \right)
+\]
+
+For some constants $c_k$ (should be $\OO(1)$); $\alpha_i$ are the coordinates in the eigenbasis $\{\bm q_i\}_i$ of $\bm v^{(0)}$ (this is always possible when $A$ is diagonalizable).
+
+This method converges to the largest (in $|\cdot|$) eigenvalue $\lambda_1$ when $|\lambda_1| > |\lambda_2|$ and at at rate $\OO(|\lambda_1 / \lambda_2|)$ per iteration in eigenvectors; $\OO(|\lambda_1 / \lambda_2|^k)$ per $k$ iterations and the square $\OO(|\lambda_1 / \lambda_2|^{2k})$ for eigenvalues.
+
+Note though, in practice, it is rare that a matrix has exactly the same two equal eigenvalues at the numerical precision.
+
+This is possibly the worst method (but is very simple and usually works).
+
+\subsection*{Inverse power iteration}
+
+This method modifies the power iteration to give the smallest eigenvalue.
+
+Seed: $\bm v^{(0)}, \, \text{ with }\normtwo{v^{(0)}} = 1$
+
+At $k$-th iteration:
+\[
+    \bm w := A^{-1} \bm v^{(k-1)} \qquad 
+    (\text{in practice, solve the system: }A\bm w = \bm v^{(k-1)})
+\]
+\[
+    \bm v^{(k)} := \frac{\bm w}{\normtwo{\bm w}}
+\]
+Eigenvalue estimates given by $r(\bm v^{(k)})
+$.
+
+This method is ``simple'' but is still very useful in practice when the target eigenvalue is already known.
+
+\subsection*{Inverse shifted power iteration}
+
+Main idea: modify the power iteration so that the eigenvalues are separated.
+
+$A-\mu I$ shifts the eigenvalues to $\lambda_i-\mu$ (the eigenvectors are the same!), then if $\mu$ is close to a particular eigenvalue $\lambda_*$ of $A$, the matrix $(A-\mu I)^{-1}$ has a large eigenvalue $(\lambda_*-\mu)^{-1}$ (much larger than the second closest eigenvalue).
+
+Seed: $\bm v^{(0)}, \, \text{ with }\normtwo{v^{(0)}} = 1$
+
+At $k$-th iteration:
+\[
+    \bm w := (A-\mu I)^{-1} \bm v^{(k-1)} \qquad 
+    (\text{in practice, solve the system: }(A-\mu I)\bm w = \bm v^{(k-1)})
+\]
+\[
+    \bm v^{(k)} := \frac{\bm w}{\normtwo{\bm w}}
+\]
+Eigenvalue estimates also given by $r(\bm v^{(k)})
+$.
+
+Even if it would appear that the choice of $\mu$ could make $(A-\mu I)$ very ill-conditioned, in practice this is not actually a problem:  the matrix $(A-\lambda_i I)$ is not invertible, but the system $(A-\lambda_i I)\bm v = \bm 0$ has infinite solutions. So, with a suitable solver a nonzero solution can be found here [TODO: is this true?].
+
+Convergence also requires the closest eigenvalue (in abs.\@ val.) to be unique (less likely if $\mu$ is ``random'').
+
+
+\subsection*{Rayleigh quotient iteration}
+
+Given that the Rayleigh quotient is an approximation of $\lambda_i$ we can use it as $\mu$ (updated at each iteration) in the inverse power iteration to accelerate it. 
+Seed: $\bm v^{(0)},\,\lambda_0$.
+
+At $k$-th iteration:
+\[
+    \mu := \lambda_{k-1}
+\]\[
+    \bm w := (A-\mu I)^{-1} \bm v^{(k-1)} \qquad 
+    (\text{in practice, solve the system: }(A-\mu I)\bm w = \bm v^{(k-1)})
+\]
+\[
+    \bm v^{(k)} := \frac{\bm w}{\normtwo{\bm w}}
+\]
+\[
+    \lambda^{(k)} := r(\bm v^{(k)}) = (\bm v^{(k)})\transp A \bm v^{(k)}
+\]
+
+It is actually very fast (cubic convergence for eigenvalues).
+
+\subsection*{Reduction to Hessenberg/triangular form}
+
+A Hessenberg matrix is an almost-upper triangular matrix (lower, depending on the book) with one subdiagonal.
+
+
+If a matrix is Hermitian/real symmetric and Hessenberg then it is tridiagonal (therefore, also sparse).
+
+The efficient eigenvalue algorithms generally used in practice have two phases:
+\begin{enumerate}
+    \item Convert $A$ into Hessenberg form $H$ (tridiagonal, for $A$ symmetric).
+    
+    Can be done by a direct method (i.e. not iterative). The Arnoldi iterative method is suitable here when $A$ is sparse.
+    
+    \item Algorithm that converts $H$ into diagonal. This is generally done by an iterative method.
+    
+    For the Hermitian case, if the eigenvectors are not required, the second phase is faster than the first one.
+\end{enumerate}
+
+[TODO: finish this...]
+
+[Important remark: $A=QHQ\transp$ is a similarity transformation, so it preserves eigenvalues (easily proven because the charPoly of $A$ is the same as the charPoly of $H$ using properties of the determinant)]
+
+[Also: property: if $A$ is symmetric, $H = PAP\transp$ is also symmetric regardless of $P$ (!); but here $P=Q$ is also orthogonal, so it also preserves eigenvalues.]
+
+[First phase: direct method.]
+
+[Householder reflections]
+
+[Directly getting the upper triangular is not possible because we need to pre- and post- multiply by $Q_i$].
+
+\subsection*{QR iteration}
+This is a very used algorithm in practice. It is an eigenvalue algorithm that relies on the QR decomposition (using Householder, Givens, etc.).
+
+[``Simple'' and ``Practical'' (with shifts and deflations) versions]
+
+[...]
+
+\newpage
+\addsec{Iterative methods for sparse matrices}
+
+General assumption: $A\in\RR^{m\times m}$, with $m\gg 1$ and $A$ is sparse.
+
+[TODO: definition of sparse: nnz$(A)=\OO(m??)$]
+
+Goal: solve $A\bm x =\bm b$.
+
+Then, we can compute $A\bm x$ efficiently: ``MatVec'', i.e.\@ matrix-vector product, is $\OO(m)$ (for general matrices we would need $\OO(m^2)$).
+
+Some examples of sparse matrices: 
+\begin{itemize}
+    \item Banded matrices (incl.\@ diagonal matrix, tridiagonal, etc.), with $\OO(1)$ bands.
+    
+    This kind typically appears in the discretization of PDEs (finite element methods), because of the locality of derivatives.
+    
+    \item Permutation matrices.
+
+    \item Hyperlink matrices (block diagonal with ``small'' blocks).
+    
+\end{itemize}
+
+For general matrices, solving $A\bm x = \bm b$ with direct methods requires $\sim\!\OO(m^3)$. We may simplify this with the knowledge that $A$ is sparse (\emph{sparse direct methods}), but we will study here only iterative methods.
+
+These iterative methods rely only on matrix-vector products (``MatVec'') as the most expensive operation. And in particular, one iteration uses only one MatVec.
+
+The cost per iteration is then $\OO(m)$. If we could find a method where the number of iterations is $\OO(1)$ (typically 20-100(?)), then the total cost would be also linear.
+
+Now, the product $A^k\bm b$ is also computed with MatVecs and we can generalize this to the multiplication by an $n$-th degree matrix polynomial ($p(A)\bm b$), where:
+\[
+    p(A) = a_n A^n +  a_{n-1} A^{n-1} + \cdots + a_1 A + a_0 I = \sum_{i=0}^n a_i A^i
+\]
+
+This also has the utility that, if $A$ is similar to a ``simpler''  matrix $B$ (e.g.\@ diagonalization, Shur form), $A=SBS^{-1}$, then:
+\[
+    p(A) = S\, p(B)\, S^{-1} \qquad \text{(because $A^{i}=SBS^{-1}SBS^{-1}\cdots SBS^{-1}=SB^{i}S^{-1}$)}
+\]
+
+In the particular case of diagonalization ($A=X\Lambda X^{-1}$):
+\[
+    p(A) = X\, p(\Lambda)\, X^{-1}; \qquad \text{and }p(\Lambda)
+        = \diag(p(\lambda_1),\, p(\lambda_2),\, ...,\, p(\lambda_m))
+\]
+
+% \subsection*{Characteristic polynomial}
+
+We denote $\chi_A(\lambda)$ as the characteristic polynomial of $A$:
+\[\chi_A(\lambda) = \det(\lambda I - A) = \sum_{i=0}^{m}a_i\,\lambda^i \]
+Note that $\chi_A$ is monic by definition, and therefore $a_n=1$.
+
+Also, $a_0 = \det(-A)$.
+
+We know that, by the Cayley-Hamilton theorem, $A$ is root of its the matrix-valued characteristic polynomial $\chi_A(X)$:
+\[\chi_A(X) = \sum_{i=0}X^{i}a_i
+    \implies
+    \boxed{ \chi_A(A) = 0 }
+\]
+
+If $A$ is invertible, $a_0=\det(-A)\neq 0$, then we can express $A^{-1}$ as:
+\[
+    A^{-1} = -\frac{1}{a_0}A^{m-1} - \frac{a_{m-1}}{a_0}A^{m-2} - \cdots - \frac{a_1}{a_0} I
+    = \boxed{-\sum_{i=0}^{m-1} \frac{a_{i+1}}{a_0} A^{i}}
+\]
+That is, $A^{-1}$ is expressed as a polynomial of degree $m-1$ (or less) in $A$.
+
+[Of course, this has little practical value for the numerical computation of $A^{-1}$: this requires the characteristic polynomial coefficients and $m-1$ matrix products.]
+
+Main idea: try to find a low-degree polynomial $p_k(X)$, such that $p_k(A)\bm b\approx A^{-1}\bm b$, for some notion of approximation ($\approx$). That is:
+\[
+    p_k(A)\bm b=
+     \left(-\sum_{i=0}^{k} \hat{a}_i A^i\right)\bm b
+        \approx
+    \left(-\sum_{i=0}^{m-1} \frac{a_{i+1}}{a_0} A^{i}\right)\bm b = A^{-1} \bm b
+\]
+Ideally with: $k \ll m$.
+
+Note that we don't really need that $p_k(A)\approx A^{-1}$, but only that $p_k(A)\bm b\approx A^{-1}\bm b$, which is a less strict condition.
+
+\subsection*{Krylov subspaces}
+
+Given a square matrix $A\in\RR^{m\times m}$ and a vector $\bm b \in \RR^m$ we define their $n$-th order Krylov subspace as:
+\[
+    \Kry_n(A,\, \bm b) = \sspan(\bm b,\, 
+    A\bm b,\,
+    A^2\bm b,\,
+    ...\,,\,
+    A^{n-1}\bm b
+    )
+    \subseteq \RR^m
+\]
+[notation: $m$ is the size/order of the matrix $A$ and $n$ is the order of the subspace]
+
+We write $\Kry_n = \Kry_n(A,\, \bm b)$ when the pair $(A,\bm b)$ is obvious.
+
+$\bm b$ can be written as $A^0 \bm b$, and also $\Kry_1 = \sspan(\bm b) = \sspan(A^0\bm b)$.
+
+Note that, because we are adding one more vector to the span:
+\[
+    \Kry_1 \subseteq \Kry_2 
+        \subseteq \Kry_3
+        \subseteq \cdots
+        \subseteq \Kry_{n-1}
+        \subseteq \Kry_{n}
+        \subseteq \RR^m
+\]
+
+Ideally, we would get that, for $n=m$, $\Kry_{m} = \RR^m$, but this is not guaranteed in general. This requires that for all $n\le m$, $\dim \Kry_{n} = n$.
+
+(This is not necessarily problematic in practice.)
+
+Now, any vector $\bm x$ in $\Kry_n$ can be written as (uniquely, when $\dim(\Kry_n)=n$):
+\[
+    \bm x \in \Kry_n \implies
+        \bm x = \sum_{j=0}^{n-1}\gamma_j A^j \,  \bm b
+    =
+        \underbrace{
+            \left(\sum_{j=0}^{n-1}\gamma_j A^j \right)
+        }_{p_{n-1}(A)}
+        \,\bm b
+    =
+        {p_{n-1}(A)}
+        \,\bm b
+\]
+Where ${p_{n-1}(X)}$ is some matrix polynomial of degree $n-1$.
+
+If $\dim(\Kry_n) = n$, then we can always find an orthogonal basis with $n$ vectors $\{\bm q_i\}_{1\le i\le n}$ of the subspace $\dim(\Kry_n)$:
+\[
+    \Kry_n
+        = \sspan(\bm b,\, A\bm b,\, A^2\bm b, \dots ,\, A^{n-1} \bm b)
+        = \sspan(\bm q_1,\,\bm q_2,\,\bm q_3, \dots ,\,\bm q_n)
+\]
+
+
+\subsection*{Arnoldi iteration}
+
+The Arnoldi iteration algorithm is used to transform an arbitrary matrix $A$ into a similar Hessenberg form: $Q\transp AQ=H$. It is an iterative method, so we usually stop at an iteration, say $n$, and then we have: $Q_n\transp A Q_n\transp = H_n$.
+
+It is shown later that this algorithm is closely related to Krylov spaces.
+
+We studied direct methods that produce an orthonormal basis (orthogonal matrices): Gram-Schmidt (original or modified), Householder and Givens. Of these, only Gram-Schmidt outputs a vector a each step, but it is only useful in QR factorization ($A=QR$); the others can be used for computing a Hessenberg form similar to $A$ ($A=Q\transp HQ$), but require to completely finish to get a useful output; as $m$ is very large, this would take too long.
+
+The Arnoldi iteration is similar to Gram-Schmidt in this respect: it produces a new vector $\bm q_n$ per iteration, which is appended to an orthonormal basis (forming a matrix $Q_n$); it also produces a sequence of Hessenberg matrices $H_n$ of increasing size ($H_n$ contains the elements of $H_{n-1}$). Under ideal conditions, we would arrive at at the $m$-th iteration with $Q=Q_m$ and $H=H_m$, such that $A =QHQ\transp$.
+
+Important remark: Arnoldi iteration is only efficient for the case of $A$ sparse (it leverages the ``efficiency'' of MatVecs), otherwise, it is more efficient to use the Householder method (or Givens, depending on the case).
+
+Recall that the Hessenberg form transformation produces the decomposition:
+\[
+    A = Q H Q\transp \iff A Q = QH
+\]
+With $Q$ an orthonormal basis of $\range(A)$. $A$ and $Q$ are of size $m\times m$.
+
+These matrix products can be rewritten in terms of ``MatVecs'' like this:
+\[
+A Q = 
+\begin{pNiceMatrix}[vlines]
+    A\, \bm q_1 &
+    \cdots &
+    A\, \bm q_{m-1} &
+    A\, \bm q_m
+\end{pNiceMatrix}
+=
+\begin{pNiceMatrix}[vlines]
+    Q\, \bm h_1
+    &  \cdots &
+    Q\, \bm h_{m-1} &
+    Q\, \bm h_m
+\end{pNiceMatrix}
+=
+QH
+\]
+If we remove the last column on both sides we get:
+\[
+\begin{pNiceMatrix}[vlines]
+    A\, \bm q_1
+    &  \cdots &
+    A\, \bm q_{m-2} &
+    A\, \bm q_{m-1}
+\end{pNiceMatrix}
+=
+\begin{pNiceMatrix}[vlines]
+    Q\, \bm h_1
+    &  \cdots &
+    Q\, \bm h_{m-2} &
+    Q\, \bm h_{m-1}
+\end{pNiceMatrix}
+\]
+Now, note that the LHS is the matrix $A$ multiplied by the matrix $Q$ with one less column, we call this truncated matrix $Q_{m-1}\in\RR^{m\times (m-1)}$. Denote also $Q_m=Q$.
+
+On the RHS we have a similar situation, but now note that the products
+    \[  Q_m\,\bm h_{i}  \quad \text{for $i\in \{1,\, ...\,,\, m-2\}$}\]
+ignore the last column of $Q$ because, by the Hessenberg property of $H$, the last element of  $\bm h_{i}$ is zero.% This is not the same for $i=m-1$, so we treat it separately.
+
+Then, consider the vectors $\hathat{\bm h}_i$ (size $m-1$), that result from dropping the last element of $\bm h_i$. These vectors form the columns of $\tilde{H}_{m-2} \in\RR^{(m-1)\times (m-2)}$, with both the last row and last two columns removed from $H$, then, we can write the last equation like this:
+\[
+    \begin{pNiceMatrix}[vlines]
+        A\, \bm q_1
+        & \cdots &
+        A\, \bm q_{m-1}
+    \end{pNiceMatrix}
+    =
+    \begin{pNiceMatrix}[vlines]
+        Q_{m-1}\, \hathat{\bm h}_1
+        &  \cdots &
+        Q_{m-1}\, \hathat{\bm h}_{m-2} &
+        Q_m \, {\bm h}_{m-1}
+    \end{pNiceMatrix}
+%= Q_{m-1} \hathat{H}_{m-1}
+\]
+\[
+\boxed{
+    AQ_{m-1} = 
+        \begin{pNiceMatrix}[vlines]
+            Q_{m-1}\, \tilde{H}_{m-2}
+            &
+            Q_m \, {\bm h}_{m-1}
+        \end{pNiceMatrix}
+}
+\]
+\vspace{0.2em}
+
+Then the last column of $Q_m = Q$, $\bm q_m$ only affects the last column of the result.
+
+Define $\tilde{H}_{m-1} \in \RR^{m\times (m-1)}$ with same columns of $H$ except the last one, then we can write again as:
+\[
+\boxed{
+    AQ_{m-1} = 
+        Q_{m} \tilde{H}_{m-1}
+}
+\]
+
+Now, let us generalize this result: we only keep the first $k$ columns from $AQ=QH$, and define $\overline H_k\in\RR^{m\times k}$ as the first $k$ columns of $H$. For $k\ll m$ most of the rows of $\overline H_k$ are zeros; $\tilde{H}_k\in\RR^{(k+1)\times k}$ is the same matrix after removing all lower rows we know are zero:
+\[
+    AQ = Q H \implies
+        AQ_k = Q\overline H_k \implies
+        AQ_k = Q_{k+1}\tilde{H}_k
+\]
+
+The Arnoldi iteration proposes something based on these observations, by calculating the elements of ``increasingly growing'' matrices.
+
+In particular, the Arnoldi iteration generates, at each step/iteration $n$:
+\begin{itemize}
+    \item {}$Q_n\in\RR^{m\times n}$, with $n$ orthonormal vectors as columns ($Q_{n+1}$ contains the same columns of $Q_n$ and a new one).
+    \item {}$\tilde H_n \in \RR^{(n+1)\times n}$, ``almost'' square and Hessenberg.
+    
+    $\tilde H_{n+1}$ adds a new row and column to $\tilde H_{n}$, but note that, for the new row, only the last entry is nonzero.
+\end{itemize}
+
+In any case, they must obey the property called ``Arnoldi relation'':
+\[
+    \boxed{
+        A Q_k = Q_{k+1} \tilde H_k
+    }\quad (k<m)
+\]
+
+Assuming that we know $Q_k$ and $\tilde H_{k-1}$, let us deduce the expression of the next vector $\bm q_{k+1}$.
+To do so, expand the last column of both sides:
+\[
+    A\bm q_k = Q_{k+1} (\tilde{H}_k)_k
+\]
+where $(\tilde{H}_k)_k$ is the last column of $(\tilde{H}_k)_k$ (has $k+1$ entries).
+
+Using $Q_{k+1}$ we write the RHS as linear combination of $\{\bm q_s\}_s$:
+\[
+    A\bm q_k = h_{1,k}\,\bm q_1 + h_{2,k}\,\bm q_2 + \cdots + h_{k,k}\,\bm q_{k} + h_{k+1,k}\,\bm q_{k+1} = \sum_{s=1}^{k+1} h_{s,k}\,\bm q_s
+\]
+Now, assuming $h_{k+1,k}\neq 0$, we can solve for $\bm q_{k+1}$:
+\[
+\implies
+    \bm q_{k+1} = \frac{1}{h_{k+1,k}}
+    \left(
+        A\bm q_k - \sum_{s=1}^{k} h_{s,k}\,\bm q_s
+    \right)
+\]
+
+So, to compute the next basis vector $\bm q_{k+1}$ we only need $A\bm q_{k}$ (MatVec with sparse $A$) and a linear combination of $k\ll m$ vectors of $m$ entries. Therefore, computing $\bm q_{k+1}$ requires $\OO(m)$ [TODO: check this].
+
+But, for this, we first need to know the entries in the $k$-th column of $H$, $h_{s,k}$.
+
+From the expression of $\bm q_{k+1}$, it is clear that $h_{k+1,k}$ is the normalizing factor that forces $\normtwo{\bm q_{k+1}}=1$; for the real case, there are two options (positive or negative), by convention we choose $h_{k+1,k}>0$.
+
+We can be obtain the rest of $h_{s,k}$ from:
+\[
+    \bm q_i\transp (A \bm q_k) =
+    \bm q_i\transp\left(\sum_{s=1}^{k+1} h_{s,k}\,\bm q_s\right)
+    =
+    \sum_{s=1}^{k+1} h_{s,k}\,\delta_{i,s}
+    = h_{i,k}
+    ,\quad \text{for } i\in \{1,..., k\}
+\]
+This requires $k$ scalar products (note that the MatVec $A \bm q_k$ is already calculated).
+
+
+[In the algorithm in the book, $\bm q_{k+1}$ and all $h_{i,k}$ are calculated at the same time (also taking advantage of the orthogonal property), in order to save some computations ($h_{k+1,k}$ should be faster to obtain??)].
+
+Also, whenever $\bm q_{k+1}=\bm 0$, we cannot continue building a base because any $A\bm q_{k}$ must be linearly dependent on the previous base $\{\bm q_i\}_{1 \le i\le k}$. This is not necessarily a bad outcome; what can be done it this situation depends on the application.
+
+\subsection*{Arnoldi iteration and Krylov subspaces}
+
+Now we try to apply the Arnoldi iteration in such a way that a basis of the Krylov subspace $\Kry_n$ is generated. Assume that $\dim(\Kry_n)=n$, then there exists an orthonormal basis $\{\bm q_i\}_{1\le i \le n}$ such that:
+\[
+    \Kry_n
+        = \sspan(\bm b,\, A\bm b,\, A^2\bm b, \dots ,\, A^{n-1} \bm b)
+        = \sspan(\bm q_1,\,\bm q_2,\,\bm q_3, \dots ,\,\bm q_n)
+    \subseteq \RR^m
+\]
+
+To achieve this, set $\displaystyle\bm q_1 = \frac{\bm b}{\normtwo{\bm b}}$. Then, we have: $\Kry_1 = \sspan(\bm q_1)$.
+
+And now, from the expression
+\[    \bm q_{k+1} = \frac{1}{h_{k+1,k}}
+    \Bigg(
+        A\bm q_k - 
+            \underbrace{
+                \sum_{s=1}^{k} h_{s,k}\,\bm q_s
+            }_{\in \sspan(\bm b, ..., A^{k-1}\bm b)}
+    \Bigg)
+\]
+
+we can deduce (proven by induction?) that for $1<k<n$:
+\[\text{$\bm q_{k}\in \Kry_k$, $\bm q_{k}\notin \Kry_{k-1}$ and $\bm q_{k+1}\notin \Kry_{k}$}\]
+
+In conclusion: for $k \le n$, the sequence of $k$ vectors $\{\bm q_i\}_{1\le i\le k}$ produced by the Arnold iteration is a basis that generates the Krylov subspace $\Kry_k$ (for $k\le n\le m$).
+
+This also means that, if the Arnoldi iteration finishes because it cannot find a new independent $\bm q_{k+1}$, then: $\Kry_k = \Kry_{k+1}$.
+
+\subsection*{Arnoldi iteration and eigenvalues}
+
+Consider again the Arnoldi relation:
+\[
+    AQ_n = Q_{n+1} \tilde H_{n}
+\]
+
+Premultiply both sides by $Q_n\transp$:
+\[
+    Q_n\transp AQ_n = Q_n\transp Q_{n+1} \tilde H_{n}
+\]
+
+And observe that:
+\[
+    Q_n\transp Q_{n+1} =
+    \begin{pNiceMatrix}[vlines]
+        I_n & \bm 0
+    \end{pNiceMatrix} \in \RR^{n\times (n+1)}
+\]
+
+Then, we define $H_n$ as the $n\times n$ square matrix resulting from dropping the last row of $\tilde H_{n}$.
+
+[Notation: $\overline{H}_n$ is a ``very tall'' matrix, $\tilde H_n$ is tall but ``almost square'' and $H_n$ is square; all of them have $n$ columns and contain the same nonzero elements (except that $H_n$ removes the lower right corner).]
+
+Then, we can write:
+\[
+    \boxed{Q_n\transp AQ_n = H_{n}}
+\]
+
+Note that this is NOT a similarity transformation because $Q_n$ is not square (it is only \emph{semi}-orthogonal). But it would be so if we went go up to $n=m$ ($Q_m=Q$ is square).
+
+And therefore, the eigenvalues of $H_m=H$ are the same as those in $A$.
+
+This iterative method would be useful if the eigenvalues of $H_n$ (for $n\ll m$) somehow approximate those of $A$. This is, indeed, the case (proven in the next section) and we give them a name: the eigenvalues of $H_n$ are called ``Ritz values''.
+
+We have that, in general, $\bm v\in\Kry_n$, then $A\bm v\notin\Kry_n$; but we can find the vector in $\Kry_n$ that is ``closest'' to $A\bm v$ by using projections (LS solution).
+
+The projection matrix ``onto'' $\Kry_n$ is given by:
+\[
+    P_{\Kry_n} = Q_n Q_n\transp
+\]
+(recall that $\hat Q \hat Q\transp=P_{\range(\hat Q)}$ and 
+$\hat Q\transp \hat Q=I$, for $\hat Q$ \emph{semi}-orthogonal)
+
+Then we have
+\[
+    P_{\Kry_n} A = Q_n Q_n\transp A
+\]
+And also, applying change of basis on the left and right spaces, we obtain:
+\[
+    Q_n\transp (P_{\Kry_n} A) Q_n =
+    Q_n\transp (Q_n Q_n\transp A) Q_n = 
+    Q_n\transp A Q_n
+\]
+And, from the result above:
+\[
+    \boxed{Q_n\transp (P_{\Kry_n} A) Q_n = H_n}
+\]
+
+So $H_n$ is actually related to the ``projection'' of $A$ (whatever that means, because $A$ is not a vector...) onto the subspace $\Kry_n$.
+
+To particularize this relation, we will use a polynomial approximation.
+
+To begin with: any vector $\bm x\in\Kry_n$ (with $\dim\Kry_n=n$) can be uniquely written as
+\[
+    \bm x = c_0 \bm b +
+    c_1 A\,\bm b +
+    \cdots +
+    c_{n-1} \, A^{n-1} \,\bm b
+    =
+    \sum_{i=0}^{n-1} c_i \, A^{i} \,\bm b
+    =
+    \left(
+    \sum_{i=0}^{n-1} c_i \, A^{i}\right) \bm b
+\]
+this has the structure of an $(n-1)$-degree matrix polynomial \[q(Z)=\sum_{i=0}^{n-1} c_i Z^i\]
+evaluated at $Z=A$ and then multiplied by $\bm b$.
+
+That is:
+\[
+    \bm x = q(A)\,\bm b
+\]
+
+Let $\Pi^n$ be the set of $n$-th degree monic polynomials, that is, with the leading coefficient ($n$-th degree term) equal to 1. E.g.\@ the characteristic polynomial of any matrix.
+
+Then, we look for a monic polynomial such that
+\[
+    \normtwo{p^{(n)}(A)\,\bm b}, \quad \text{for }p^{(n)}\in \Pi^n
+\]
+is minimized. This is an optimization problem on monic polynomials (the possible solutions are defined by lists of $n$ coefficients), which is called the ``Arnoldi/Lanczos Approximation Problem''.
+
+And, actually, it can be proven (next section) that: if $\dim(\Kry_n)=n$ then the Arnoldi iteration produces the unique solution of the Arnoldi/Lanczos Approximation Problem, which happens to be the characteristic polynomial of $H_n$.
+
+This motivates the following 2-phase eigenvalue algorithm:
+\begin{enumerate}
+    \item Perform the Arnoldi iteration (start with $\bm b$ random) up to step $n\ll m$.
+    
+    This results in the matrices $Q_n\in \RR^{n\times m}$, $H_n\in\RR^{n\times n}$.
+    
+    \item Compute the eigenvalues of $H_n$ (Ritz values).
+    
+    This may be done with a direct method because $n$ is small, but the QR iteration is also a valid option (especially using Givens rotations as many elements are already zero (??)).
+\end{enumerate}
+
+Now, we don't know which $n<m$ eigenvalues of $A$ are approximated by this algorithm and the ``quality'' of such approximations.
+
+in practice the charpoly of hn has an approxation of the roots of , ie the eigenvalues.
+
+\newpage
+\subsection*{Proof of optimality in the Arnoldi Approximation Problem}
+
+The Arnoldi Approximation Problem is as follows:
+
+Given $A$ and $\bm b$.
+
+Find the optimal monic polynomial $p^{(n)}\in \Pi^n$ such that
+\[
+    \normtwo{p^{(n)}(A)\bm b} \le \normtwo{q^{(n)}(A)\bm b},
+    \qquad \forall  q^{(n)}\in \Pi^n
+\]
+Theorem: the solution of this problem is unique and is precisely the characteristic polynomial of $H_n$, $p^{(n)} = \chi_{H_n}$.
+
+Proof:
+
+Note that, for the case $m=n$, the characteristic polynomial $\chi_A=p^{(n)}$ is trivially a minimum, because: $\normtwo{\chi_A(A)\bm b}=\normtwo{0\bm b} = 0$ (we still need to prove that it is unique).
+
+Any $q^{(n)}(A)\bm b$ with $q^{(n)}\in \Pi^n$ can be written as
+\[
+    q^{(n)}(A)\bm b = A^n \bm b + \bm z
+    \quad \text{with }
+    \bm z \in \Kry_{n}
+\]
+
+Now, because $\bm z\in \Kry_{n}$, we can write it as linear combination of $\{\bm q_i\}_{1\le i\le n}$:
+\[ \bm z = -Q_n \bm y \text{ for some }\bm y \in \RR^n \]
+(the reason for the minus sign becomes obvious later on)
+
+Then, the minimization problem can be written as:
+\[
+    \min_{q^{(n)}\in \Pi^n} \normtwo{q^{(n)}(A)\,\bm b}=
+    \min_{\bm y \in \RR^n} \normtwo{A^n\,\bm b - Q_n\,\bm y}
+\]
+This is (yet again) a Least Squares problem. Here, the residual is $\bm r=q^{(n)}(A)\bm b$, the system matrix is $Q_n$ and the RHS vector is $A^n\,\bm b$. That is, the system is:
+\[
+    Q_n\,\bm y = A^n\,\bm b
+\]
+Then, to obtain the LS solution, we orthogonally project $A^n\,\bm b$ onto $\range (Q_n)=\Kry_n$.
+
+In particular, if the LS solution is $\bm y^*$, the orthogonal projection of $A^n\bm b$ must be $Q_n\bm y^*$. Then, the residual is minimized and therefore $q^{(n)}=p^{(n)}$ if $\bm y=\bm y^*$.
+
+Now, because for $Q_n$ \emph{semi}-orthogonal we have $Q_n^{\dagger} = Q_n\transp$ and the LS solution is:
+\[\bm y^* = Q_n\transp A^n \bm b\]
+
+But this does not directly give us information about the optimal polynomial $p^{(n)}$.
+
+Instead, let us deduce from the orthogonality condition:
+\[
+    \bm r\perp \Kry_n\implies
+    Q_n\transp \bm r =\bm 0 \implies
+    Q_n\transp ({A^n\,\bm b - Q_n\,\bm y^*}) =\bm 0
+\]
+And also (setting $q^{(n)}=p^{(n)}$ in the residual expression, as it produces the optimal solution):
+\[
+\bm r\perp \Kry_n\implies p^{(n)}(A)\bm b \perp \Kry_n
+\]
+
+Now, split the final similarity transformation of $A$ into submatrices:
+\[
+    A = Q HQ\transp
+\]
+\[
+    Q = \begin{pNiceMatrix}
+        Q_n & U
+    \end{pNiceMatrix};\quad
+    H = \begin{pNiceMatrix}
+        H_n & X_1 \\
+        X_2 & X_3
+    \end{pNiceMatrix}
+\]
+Where we have the Arnoldi relation:
+\[
+    H_n = Q_n\transp A Q_n
+\]
+The columns of $Q_n$ span $\Kry_n$. 
+Then, the columns of $U$ span $\Kry_n^\perp$ (orthogonal complement).
+
+$X_1$ is a full matrix (\emph{fat}, as $n\ll m$), $X_2$ is all zeros except the upper right corner (\emph{tall}), $H_n$ is Hessenberg (square, $n\times n$, small), $X_3$ is Hessenberg (square, $(m-n)\times (m-n)$, big).
+
+Now, following from the observation above:
+\[
+\bm r\perp \Kry_n\implies p^{(n)}(A)\bm b \perp \Kry_n
+\implies Q_n\transp p^{(n)}(A)\bm b = \bm 0
+\]
+
+And, using the similarity trick:
+\[
+    A = QHQ\transp \implies p^{(n)}(A) = Q p^{(n)}(H) Q\transp
+\]
+
+Then, the condition can be written as:
+\[
+\bm r\perp \Kry_n\implies
+    \underbrace{Q_n Q}_{(1)}
+        p^{(n)}(H)
+    \underbrace{Q\transp\bm b}_{(2)} = \bm 0
+\]
+
+For the left part $(1)$:
+\[
+    Q_n\transp Q = \begin{pNiceMatrix}[vlines]
+        I_n & 0
+    \end{pNiceMatrix}\in\RR^{n\times m}
+\]
+For the right part $(2)$, because $\bm q_1 = \bm b/\normtwo{\bm b}$:
+\[
+    Q\transp \bm b = 
+    \normtwo{\bm b}\bm e_1
+    \in\RR^{m\times 1}
+\]
+Then, a right multiplication by $Q\transp \bm b$ keeps the first column and a left multiplication by $Q_n\transp Q$ keeps the first $n$ rows.
+
+Denote $(p^{(n)}(H))_{1:n,1}$ as the first $n$ entries in the first column of $p^{(n)}(H)$, then:
+\[
+\bm r\perp \Kry_n\implies
+    \normtwo{\bm b}\, (p^{(n)}(H))_{1:n,1} = \bm 0
+    \implies
+    \boxed{(p^{(n)}(H))_{1:n,1} = \bm 0}
+\]
+
+To study the form of $(p^{(n)}(H))_{1:n,1}$, let us start analyzing $H^2$:
+\[
+    H^2
+    =
+    \begin{pNiceMatrix}
+        H_n & X_1 \\
+        X_2 & X_3 \\
+    \end{pNiceMatrix}
+    \begin{pNiceMatrix}
+        H_n & X_1 \\
+        X_2 & X_3 \\
+    \end{pNiceMatrix}
+    =
+    \begin{pNiceMatrix}
+        H_n^2 + X_1 \,X_2 & (\times) \\
+        X_2\, H_n + X_3\, X_2 & (\times) \\
+    \end{pNiceMatrix}
+\]
+(we don't compute the parts marked as $(\times)$)
+
+Because of the structure of $X_2$, if we right-multiply $X_1$ with it, we select the first column of $X_1$, and placing it as the last column of the product, the rest are zeros:
+\[
+    X_1 \, X_2 = \begin{pNiceMatrix}[vlines]
+        0_{n\times(n-1)} & (X_1)_{:,1}
+    \end{pNiceMatrix}
+\]
+Now, the important detail here is that the submatrix $(H_n^2 + X_1 \, X_2)$ has as its first column the first column of $H_n^2$.
+
+The lower left submatrix results: $X_2\, H_n + X_3\, X_2$. Where $X_2\,H_n$ selects the last row of $H_n$ (has nonzero entries in the last 2 positions) and places them in the first row; in $X_3 X_2$ the first column of $X_3$ (again, 2 nonzeros at the beginning) is copied to the last column; then:
+\[
+    X_2\, H_n + X_3\, X_2 =
+    \begin{pNiceMatrix}
+        &&&0& \times& \times \\
+        &&&& 0& \times \\
+        &&&& & 0\\
+        0\\
+    \end{pNiceMatrix}
+\]
+
+For subsequent powers, it can be proven that the submatrix at this position has each time one more nonzero diagonal (first nonzero diagonal is ``shifted'' to the left). Then, e.g.\@ $H_n^3$ is added to a matrix with only last 2 columns nonzero.
+
+Therefore, it can be proven (induction?) that in $H^i$ for $1\le i\le n$, the first column of the submatrix at the position of $H_n$ is left untouched.
+
+And, in particular, we have that: $(H^i)_{1:n,1}=(H_n^i)_{1:n,1}$ (for $1\le i\le n$).
+
+As the polynomial is $p^{(n)}(H)$ is formed by powers $H^i$ up to $H^n$, all of this implies: \[
+    (p^{(n)}(H))_{1:n,1} = \bm 0
+    \implies
+    (p^{(n)}(H_n))_{1:n,1}= \bm 0
+\]
+
+And now we have the minimizing condition:
+\[
+\bm r \perp \Kry_n
+    \implies
+    (p^{(n)}(H_n))_{1:n,1}= \bm 0
+\]
+
+And this condition is always met by the characteristic polynomial $\displaystyle p^{(n)}(z) = \chi_{H_n}(z)$
+
+(because of the Cayley-Hamilton theorem).
+
+This proves the existence of a solution.
+
+\subsubsection*{Proof of uniqueness}
+
+Assume (for contradiction) that there is another $n$-th order monic polynomial $\tilde p^{(n)}\neq p^{(n)}$ for which $\normtwo{\bm r}$ is minimized.
+
+Then:
+$p^{(n)}(A)\,\bm b\perp \Kry_n \text{ and } \tilde{p}^{(n)}(A)\,\bm b\perp \Kry_n$.
+
+Define the difference polynomial $q^{(n-1)}$, which must be at least one degree lower:
+\[
+    q^{(n-1)} := p^{(n)}- \tilde{p}^{(n)} \in P_{n-1}
+\]
+
+Now $q^{(n-1)}$ must also have the property:
+\[
+    q^{(n-1)} (A)\,\bm b \perp \Kry_n
+\]
+
+As the columns of $Q_n$ span $\Kry_n$:
+\[
+    q^{(n-1)} (A)\,\bm b \perp \Kry_n
+    \implies
+    Q_n\transp (q^{(n-1)} (A))\,\bm b = \bm 0
+\]
+
+But because $q^{(n-1)}$ is of degree $\le n-1$, we must have that $(q^{(n-1)} (A))\,\bm b \in \Kry_n$.
+
+We have shown that the vector $(q^{(n-1)} (A))\,\bm b$ is both orthogonal to $\Kry_n$ and in $\Kry_n$; so it must be identically zero:
+\[
+    q^{(n-1)}(A)\bm b = \bm 0
+\]
+But, by assumption, $\dim(\Kry_n)=n$ and $q^{(n-1)}(A)\bm b\in\Kry_n$ is a linear combination (using the coefficients of the polynomial) of the basis vectors formed by $A^{i}\bm b$ ($0\le i \le n-1$).
+
+Then, the result can only be zero if the coefficients of the polynomial are all zero: therefore $q^{(n-1)} = 0$, which contradicts the assumption $q^{(n-1)} = p^{(n)}- \tilde{p}^{(n)} \neq 0$.
+
+In conclusion, the solution $p^{(n)}\in \Pi_n$ must be unique.
+
+\subsection*{GMRES}
+
+The Generalized Minimal Residual Method (GMRES) is an equation-solving algorithm based on Arnoldi iteration and Krylov subspaces.
+
+[Important note: we implicitly assume that the initial guess is $\bm x_0=\bm 0$ and thus $\bm r_0=\bm b$.
+
+Otherwise, the generated Krylov subspaces in GMRES are not $\Kry_n=\Kry_n(A, \bm b)$, but $\Kry_n(A, \bm r_0)$; the generated solutions are of the form $\bm x_0 + \Kry_n(A, \bm r_0)$. This assumption makes the following analysis simpler.]
+
+Consider the system of linear equations
+\[
+    A\bm x =\bm b
+\]
+with $A\in\RR^{m\times m}$ square.
+
+The Least Squares problem (unconstrained minimal residual) has the form:
+\[
+    \min_{\bm x\in\RR^{m}}\normtwo{
+        \underbrace{\bm b - A\bm x}_{\bm r}
+    }
+\]
+The residual is $\bm r = \bm b - A\bm x$.
+
+We want instead, to study the problem with solutions constrained to $\Kry_n\subseteq \RR^{m}$:
+\[
+    \min_{\bm x\in\Kry_n}\normtwo{
+        \bm b - A\bm x
+    }
+    \implies
+    \bm x_n = \arg\min_{\bm x\in\Kry_n}\normtwo{
+        \bm b - A\bm x
+    }
+\]
+
+If $\bm x_n = \bm x^*$ is the exact solution by chance and $A$ is invertible, then:
+\[
+    \bm x_n = \bm x^* =A^{-1}\bm b
+\]
+And the residual would be zero. This happens when $\bm b\in \Kry_{n+1} \cap \range(A)$ [TODO: is it $\Kry_{n+1}$ or $\Kry_{n}$??].
+
+Again, $A^{-1}$ can be expressed as a matrix polynomial evaluated at $A$ and this motivates the use of polynomials to find/approximate the solution.
+
+Now, define $\bm r_n$ as the residual for the optimal solution $\bm x_n\in\Kry_n$; the sequence $\{\normtwo{\bm r_n}\}_n$ is nonincreasing (not proven here, but makes sense intuitively).
+
+Worst possible case: $\normtwo{\bm r_n}$ stays constant until the last step, where it drops sharply.
+
+Now, recall the Arnoldi relation:
+\[
+    AQ_n = Q_{n+1} \tilde H_n
+\]
+
+Any vector $\bm x\in \Kry_n\subseteq\RR^m$ can be expressed as $\bm x = Q_n\bm y$, for some unique $\bm y\in \RR^n$, then we can rewrite the problem to solve as:
+\[
+    \min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    =
+    \min_{\bm x\in\Kry_n}\normtwo{
+        {A\bm x - \bm b}
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        {AQ_n\bm y - \bm b}
+    }
+\]
+Using the Arnoldi relation:
+\[
+    \min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        {Q_{n+1}\tilde H_n\bm y - \bm b}
+    }
+\]
+The matrices $Q_{n+1}$, $\tilde H_n$ are much smaller than $A$.
+
+[TODO: $Q_{n+1}\transp$ is not even semi-orthogonal (it is the rows that are orthonormal, not the columns), but left multiplication preserves the 2-norm in this case; need proof of this...]
+
+Then:
+\[
+    \min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        Q_{n+1}\transp Q_{n+1}\tilde H_n\bm y - Q_{n+1}\transp\bm b
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \tilde H_{n} \bm y - Q_{n+1}\transp\bm b
+    }
+\]
+
+Now, recall that $\bm q_1 =\frac{\bm b}{\normtwo{\bm b}}$, and therefore:
+\[Q_{n+1}\transp\bm b = \normtwo{b} \bm e_1 \]
+where $\bm e_1 \in \RR^{n+1}$ is the first canonical basis vector (first 1, rest zeros).
+
+Then:
+\[
+    \min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \tilde H_{n} \bm y - \normtwo{\bm b}\bm e_1
+    }
+\]
+
+The matrix $\tilde H_{n}$ is Hessenberg and ``almost''-square (tall, by one extra row) and we assume that $Q_{n+1}\transp\bm b$ is already computed (vector in $\RR^{n+1}$).
+
+The problem is reduced to the ``almost''-square system ($n+1$ equations and $n$ unknowns):
+\[
+    \tilde H_{n} \bm y = \normtwo{\bm b} \bm e_1
+\]
+with the same residual as the original problem \[
+    -\bm r_n = A\bm x_n - \bm b = \tilde H_{n} \bm y - \normtwo{\bm b} \bm e_1
+\]
+The GMRES algorithm to solve $A\bm x = \bm b$ is then:
+\begin{enumerate}
+    \item Set $\bm q_1 = \frac{\bm b}{\normtwo{b}}$.
+
+    \item Execute the Arnoldi iteration until step $n$ to build the matrices $Q_{n+1}\in \RR^{m\times (n+1)}$ and $\tilde H_n \in \RR^{(n+1)\times n}$.
+    
+    \item Use a Least Squares method to solve the system
+    \[
+        \tilde H_{n} \bm y = \normtwo{\bm b} \bm e_1,
+        \qquad  (\bm e_1 \in \RR^{n+1})
+    \]
+    obtaining the LS solution $\bm y_n \in \RR^{n}$.
+    
+    The QR method with Givens rotations is useful here, because $\tilde H_{n}$ is Hessenberg: we only need to zero out the first subdiagonal.
+    
+    \item Compute the final solution: $\bm x_n = Q_n\bm y_n$.
+\end{enumerate}
+
+\subsection*{``Standard'' GMRES}
+The presented algorithm assumes that we know the number of iterations $n$ beforehand.
+
+In practice, $n$ is selected according to a termination criterion, instead of using a fixed $n$.
+
+To do so, we would compute at the $n$-th iteration the residual norm $
+    \displaystyle\min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }$ and stop when it falls below a chosen tolerance.
+
+Assuming that the method to compute the solution $\bm y_n$ is the QR method (e.g.\@ Givens rotations, as recommended); we have the decomposition:
+\[
+    \tilde{H}_n = \overline Q_n \, \overline R_n
+\]
+with $\overline Q_n$ square and orthogonal and $\overline R_n$ upper triangular, with the same size as $\tilde{H}_n$ (almost square).
+
+The last row of $\overline R_n$ is all zeros, because it is upper triangular.
+
+Then, we can rewrite again the residual norm:
+\begin{align*}
+% \[
+    \displaystyle\min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    &=
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \tilde H_{n} \bm y - \normtwo{\bm b}\bm e_1
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \overline Q_n \, \overline R_n \bm y - \normtwo{\bm b}\bm e_1
+    }=%\]
+\\[0.5em]
+%\[
+    &=
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \overline R_n \bm y - \overline Q_n\transp \normtwo{\bm b}\bm e_1
+    }
+\end{align*}
+%\]
+
+Define $\overline{\bm q}_n=\overline Q_n\transp\bm e_1$ (last row of $\overline Q_n$); then:
+\[
+    \displaystyle\min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    =
+    \min_{\bm y\in\RR^{n}}\normtwo{
+        \overline R_n \bm y - \normtwo{\bm b} \overline{\bm q}_n
+    }
+\]
+
+Now, observe the structure:
+\[
+\overline R_n \bm y - \normtwo{\bm b} \overline{\bm q}_n
+=
+\begin{pNiceMatrix}
+    \times & \times & \times & \cdots & \times
+\\
+           & \times & \times & \cdots & \times
+\\
+           &        & \times & \cdots & \times
+\\
+           &        &        & \ddots & \vdots
+\\
+           &        &        &        & \times
+\\\hline
+&&\bm 0
+\end{pNiceMatrix}
+\begin{pNiceMatrix}
+    \times
+\\
+    \times
+\\
+    \times
+\\
+    \vdots
+\\
+    \times
+\end{pNiceMatrix}
+-
+\begin{pNiceMatrix}
+    \times
+\\
+    \times
+\\
+    \times
+\\
+    \vdots
+\\
+    \times
+\\\hline
+    \alpha^{(n)}
+\end{pNiceMatrix}
+=
+\begin{pNiceMatrix}
+    \times
+\\
+    \times
+\\
+    \times
+\\
+    \vdots
+\\
+    \times
+\\\hline
+    0
+\end{pNiceMatrix}
+-
+\begin{pNiceMatrix}
+    \times
+\\
+    \times
+\\
+    \times
+\\
+    \vdots
+\\
+    \times
+\\\hline
+    \alpha^{(n)}
+\end{pNiceMatrix}
+\overset{*}{=}
+\begin{pNiceMatrix}
+    0
+\\
+    0
+\\
+    0
+\\
+    \vdots
+\\
+    0
+\\\hline
+    -\alpha^{(n)}
+\end{pNiceMatrix}
+\]
+Assuming $\tilde H_n$ is full rank, the last equality ($\overset{*}{=}$) can always be attained (otherwise this may or may not be possible). The last element $\alpha^{(n)}$ is always the same regardless of $\bm y$. Note that this assumption means that all the diagonal elements of $R$ are nonzero.
+
+This result implies that the minimum norm residual of the system
+$\overline R_n \bm y = \normtwo{\bm b} \overline{\bm q}_n$
+(with same norm as in the system $A\bm x = \bm b$) is all zeros except for the last entry.
+
+Then:
+\[
+\min_{\bm x\in\Kry_n}\normtwo{
+        \bm r
+    }
+    = |\alpha^{(n)}| =
+    \normtwo{b}\, |\overline q_{nn}|
+\]
+Where $\overline q_{nn}$ is the entry at the lower left corner of $\overline{Q}_n$.
+
+Then, the ``standard'' GMRES algorithm is as follows:
+\begin{enumerate}
+    \item Set $\bm q_1 = \frac{\bm b}{\normtwo{b}}$, $n=1$.
+    
+    \item Execute one step of the Arnoldi iteration to build the matrices $Q_{n+1}\in \RR^{m\times (n+1)}$ and $\tilde H_n \in \RR^{n\times (n+1)}$.
+    
+    \item Perform the QR decomposition (recommended to use Givens to remove just one subdiagonal) \[\tilde{H}_n = \overline Q_n \, \overline R_n.\]
+    
+    (For the next step we only need $\overline{q}_{nn}$, but it requires the whole QR decomposition... [??])
+    
+    \item Compute the value:
+    \[
+        \min_{\bm x\in\Kry_n}\normtwo{
+            \bm r
+        }
+        = |\alpha^{(n)}| =
+        \normtwo{\bm b}\, |\overline { q}_{nn}|
+    \]
+    (with $\overline { q}_{nn}$ the element at the lower left corner of $\overline{Q}_n$)
+    
+    Test if $|\alpha^{(n)}|$ is below a given threshold/tolerance:
+    
+    \begin{itemize}
+        \item If not, set $n:=n+1$ and goto step 2.
+        \item Otherwise: we finished iterating, continue in step 5.
+    \end{itemize}
+    
+    \item Find the Least Squares solution $\bm y_n$ of the system
+    \[
+        \tilde H_{n} \bm y = \normtwo{\bm b} \bm e_1,
+        \qquad  (\bm e_1 \in \RR^{n+1})
+    \]
+    
+    Using the computed QR decomposition: $\tilde{H}_n = \overline Q_n \, \overline R_n$.
+    \[
+    \overline Q_n \, \overline R_n \bm y_n = \normtwo{\bm b} \bm e_1
+    \implies 
+    \overline R_n \bm y_n = \normtwo{\bm b}\, \overline Q_n\transp \bm e_1 = \normtwo{\bm b}\hat{\bm w} = \bm w
+    \]
+    
+    Where be define $\bm w=\overline R_n \bm y_n$; $\hat{\bm w}$ is its normalized vector and is the first row of $\overline Q_n$.
+    
+    That is, the steps to perform are:
+    \[ \hat{\bm w} := (\overline Q_n)_{1:} \text{ (first row of $\overline Q_n$)} \]
+    \[ {\bm w} := \hat{\bm w} \,\normtwo{b} \]
+    \[ \text{Solve for } {\bm y}_n \text{ in }
+        \overline R_n \bm y_n = \bm w
+        \quad \text{(use back substitution)}
+    \]
+
+    \item Compute the final solution: $\bm x_n = Q_n\bm y_n$.
+
+\end{enumerate}
+
+\subsection*{Convergence of GMRES}
+
+This method is ``hard'' in general to analyze, because of nonlinearity.
+
+But for some ``interesting'' matrices the analysis becomes easier/feasible; from harder to easier, we have: general matrices (possibly defective), diagonalizable/non-defective matrices and normal matrices (including Hermitian/real symmetric ones).
+
+Assuming the initial guess $\bm x_0=\bm 0$, then the initial residual is $\bm r_0=\bm b$.
+
+GMRES solves iteratively the problems (for $n$):
+\[
+\normtwo{
+    \bm r_n
+}=
+\min_{\bm x\in \Kry_n}\normtwo{
+    \bm r
+}=
+\min_{\bm x\in \Kry_n}\normtwo{
+    \bm b - A\bm x
+}
+\]
+A vector $\bm x_n\in \Kry_n$ can be expressed as:
+\[
+    \bm x_n = \sum_{s=0}^{n-1}
+        \gamma_s A^s \,\bm b
+        =\sum_{s=0}^{n-1} \gamma_s A^s \bm r_0
+\]
+
+Then, the $n$-th residual is in $\Kry_{n+1}$:
+\begin{align*}
+     \bm r_n &= \bm b - A\bm x_n
+    =\bm r_0 - A\bm x_n
+    =\bm r_0 - A\left(
+        \sum_{s=0}^{n-1} \gamma_{s+1} A^s \bm r_0
+    \right)=
+    \bm r_0 - \left(
+        \sum_{s=1}^{n} \gamma_{s} A^s \bm r_0
+    \right)=
+    \\
+    &=
+     \left(I - 
+        \sum_{s=1}^{n} \gamma_{s} A^s
+    \right) \bm r_0
+    =\overline{p}^{(n)}(A)\bm r_0; \quad
+    \text{with }
+    \overline{p}^{(n)} \in \mathrm{P}_n
+\end{align*}
+
+where $\rP_n$ is the set of polynomials $\overline{p}$ of degree $n$ with $\overline{p}(0)=1$.
+
+\subsection*{Results for general matrices}
+
+Theorem: let $A$ be nonsingular, and $\bm x_n$ the $n$-th GMRES iteration solution. Then, for all $\overline{p}^{(n)}\in\rP_n$, there exists an optimum $\overline{p}_*^{(n)}\in\rP_n$ such that
+\[
+    \normtwo{\bm r_n} =
+        \normtwo{\overline{p}_*^{(n)}(A)\bm r_0}=
+        \min_{\overline{p}(A)\in\rP_n}\normtwo{\overline{p}(A)\bm r_0}
+        \le \normtwo{\overline{p}^{(n)}(A)\bm r_0}
+\]
+Proof: [Omitted]
+
+A consequence of this is (from the definition of the matrix 2-norm):
+\[
+\normtwo{\bm r_n}
+    \le
+    \normtwo{\overline{p}^{(n)}(A)\bm r_0}
+    \le
+    \normtwo{\overline{p}^{(n)}(A)}\normtwo{\bm r_0}
+\]
+
+Then:
+\[
+\boxed{
+    \frac{\normtwo{\bm r_n}}{\normtwo{\bm r_0}} \le
+        \normtwo{\overline{p}^{(n)}(A)}
+    ,\quad
+    \forall \overline{p}^{(n)}\in\rP_n
+}
+\]
+
+The expression ${\normtwo{\bm r_n}}/{\normtwo{\bm r_0}}$ is called \emph{relative residual}, and is the standard metric used to assess the performance of GMRES.
+
+Theorem: for $A$ nonsingular, GMRES finds the solution within $m$ iterations.
+
+Proof: use the characteristic polynomial $\chi_A(z)=\det(zI-A)$, but note that, $\chi_A$ is not guaranteed to be in $\rP_n$  because $\chi_A(0)=\det(-A)$.
+
+But $\det(A)\neq 0$ and the optimal polynomial $p_*^{(m)}$ can be simply constructed as 
+\[
+    \boxed{p_*^{(m)} = \frac{\chi_A}{\det(-A)} \in \rP_n}
+\]
+
+Then:
+\[
+    \normtwo{\bm r_m} \le
+    \normtwolr{\frac{\chi_A(A)}{\det(-A)}\,\bm r_0} = 0
+    \implies 
+    \bm r_m = \bm 0
+\]
+
+\subsection*{Results for diagonalizable matrices}
+
+For $A$ diagonalizable we have:
+\[
+    A = V \Lambda V^{-1}
+\]
+In that case, the columns of $V$ are eigenvectors and $\Lambda$ diagonal contains the associated eigenvalues in the same order.
+
+Recall that, for any polynomial $p$ we can write:
+\[
+    p(A) = V p(\Lambda)\, V^{-1}
+\]
+
+Theorem: let $A = V \Lambda\, V^{-1}$ be diagonalizable and nonsingular, then for all $\overline p\in \rP_n$,
+\[
+\frac{\normtwo{\bm r_n}}{\normtwo{\bm r_0}} \le
+    \kappa_2(V)\,
+    \max_{z\in\delta(A)}
+    |\overline{p}(z)|
+\]
+Where $\kappa_2(V)=\normtwo{V}\normtwo{V^{-1}}$ is the condition number of $V$ and $\delta(A)$ is the set of eigenvalues of $A$.
+
+Proof:
+
+From the general theorem:
+\[
+\frac{\normtwo{\bm r_n}}{\normtwo{\bm r_0}} \le
+    \normtwo{\overline p(A)} \le
+    \normtwo{V}\normtwo{V^{-1}}
+    \normtwo{\overline p^{(n)}(\Lambda)}
+\]
+
+And as ${p^{(n)}(\Lambda)}$ is diagonal $\normtwo{p^{(n)}(\Lambda)}$ is the absolute maximum element in it (abs.\@ eigenvalues of $\normtwo{p^{(n)} (A)}$)
+
+Note: recall that:
+\[
+    \normtwo{A} = \sqrt{\rho(A\transp A)} = \sqrt{\rho(A A\transp)}
+\]
+
+
+\subsection*{Results for normal matrices}
+
+\end{document}

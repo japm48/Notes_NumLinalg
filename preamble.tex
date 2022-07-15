@@ -1,0 +1,155 @@
+
+% Font support (Xelatex)
+\usepackage{fontspec}
+
+% Langeuage support (replaces babel)
+\usepackage{polyglossia}
+\setmainlanguage{english}
+
+% Basic math support
+\usepackage[fleqn]{mathtools} % Fixes amsmath + other goodness
+\usepackage{amsmath,amssymb,amsthm}
+
+\mathtoolsset{centercolon}
+
+
+% Multiline comment (\begin{comment}...\end{comment})
+\usepackage{comment}
+
+
+% Colors
+\usepackage[svgnames,dvipsnames]{xcolor}
+% xcolor -> usenames option is obsolete
+
+% Nice lists
+\usepackage{enumerate}
+\usepackage{enumitem}
+
+% Things To-Do. -> \todo,  \missingfigure
+%\usepackage[textsize=scriptsize,shadow]{todonotes}
+
+% finicky micro-typography
+\usepackage{microtype}
+
+% Underline support -> \ul
+\usepackage[normalem]{ulem}
+
+
+% Lorem ipsum -> \blindtext
+\usepackage{blindtext}
+% Alternative:
+% \usepackage{lipsum}
+
+% -> \stackrel
+\usepackage{stackrel}
+
+% Links and cross-refrences
+\usepackage{hyperref}
+\usepackage[nameinlink]{cleveref}
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=blue,
+}
+
+
+% Source code blocks with highlighting
+% TODO: test if tectonic and if so enable 
+% DOC: https://ctan.javinator9889.com/macros/latex/contrib/minted/minted.pdf
+%\usepackage[cache=false]{minted}
+\usepackage[outputdir=./tmp/]{minted}
+% https://tex.stackexchange.com/questions/343494/
+\usepackage{xpatch}
+\makeatletter
+\AtBeginEnvironment{minted}{\dontdofcolorbox}
+\def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+\xpatchcmd{\inputminted}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{}
+\xpatchcmd{\mintinline}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{} % see https://tex.stackexchange.com/a/401250/
+\makeatother
+
+
+
+% Bibliography
+% ... not worth the trouble for notes ...
+%  but watch: https://github.com/tectonic-typesetting/tectonic/issues/35
+
+
+% Symbols
+% See: https://www.math.utk.edu/~finotti/sm14/m504/symbols.pdf
+% Only include some symbols
+\usepackage[only,varoplus,varotimes]{stmaryrd}
+\usepackage{wasysym}
+% --> \mathbbm{1} (characteristic function)
+\usepackage{bbm}
+\usepackage{bm}
+
+% Bra-ket notation
+\usepackage{braket}
+
+%\pdfminorversion=7
+
+\usepackage{nicematrix}
+\usepackage{tikz}
+
+%%%%%%%%%%%%%%%%%%%
+%%% PAGE LAYOUT %%%
+%%%%%%%%%%%%%%%%%%%
+
+% \newcommand{\mysep}{\vspace{.2in} \hrule \vspace{-.1in}}
+
+
+% Horizontal rule that disappears if at the top of the page
+\newcommand\disappearingrule{%
+  \par % make sure we end a paragraph
+  \leaders\vrule width \textwidth\vskip0.6pt % rule thickness
+  \nointerlineskip % disable interline glue here
+  \vskip10pt % space below the rule
+}
+
+% Add a rule before the section titles.
+\makeatletter
+    \renewcommand{\sectionlinesformat}[4]{%
+        \Ifstr{#1}{section}{
+            \disappearingrule
+            \textbf{}\@hangfrom{\hskip #2#3}{#4}%
+        }{%else (not a section; use default definition)
+            \textbf{}\@hangfrom{\hskip #2#3}{#4}%
+        }
+    }
+\makeatother
+
+\usepackage[open,openlevel=1]{bookmark}
+\bookmarksetup{}
+
+
+% KOMA-script options [should be after setting fonts, etc.]
+% TODO: try margins etc with \areaset (KOMA)
+\KOMAoptions{
+  % page layout using DIV-part division (do NOT use geometry except for showframe)
+  % with selected font: 11 -> 80 ch/line, 12 -> 90 ch/line, 13 -> 100 ch/line
+  DIV=13,
+  %twoside=semi, % ->
+  % -> two-sided printing with one-sided margins and one-sided marginal notes
+  numbers=noenddot % Sections without a dot
+}
+
+% KOMA page options
+% \pagestyle{myheadings}
+\usepackage{scrlayer-scrpage}
+\renewcommand{\headfont}{\normalfont} % No italics
+% \clearpairofpagestyles % Clear all defaults
+\setkomafont{author}{\titlefont\normalfont}
+\setkomafont{date}{\titlefont\normalfont}
+\KOMAoptions{headsepline = true, footsepline = true}
+\makeatletter
+% \ihead{\protect\@title}
+% \ohead{\protect\studentname}
+\ohead{\protect\@title}
+\cfoot{\pagemark}
+\makeatother
+
+
+
+% TODO: redo this more elegantly...
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}

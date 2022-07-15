@@ -1,0 +1,35 @@
+
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\normtwo}[1]{\|#1\|_2}
+\newcommand{\normtwolr}[1]{\left\|#1\right\|_2}
+\newcommand{\normone}[1]{\|#1\|_1}
+\newcommand{\norminf}[1]{\|#1\|_\infty}
+\newcommand{\normfrob}[1]{\|#1\|_{\text{F}}}
+\newcommand{\transp}{^{\mathrm{T}}}
+
+\newcommand{\RR}{\mathbb R} % Real numbers
+\newcommand{\CC}{\mathbb C} % Complex numbers
+\newcommand{\Kry}{\mathcal{K}} % Krylov subspace
+\newcommand{\OO}{\mathcal{O}} % Big-O
+\newcommand{\PP}{\mathcal{P}} % polynomials of degree <= n
+\newcommand{\rP}{\mathrm{P}} % polynomials with p(0)=1
+
+\DeclareMathOperator{\Ker}{Ker} % Kernel
+\DeclareMathOperator{\rank}{Rank}
+\DeclareMathOperator{\range}{Range}
+\DeclareMathOperator{\sspan}{Span}
+\DeclareMathOperator{\trace}{trace}
+\DeclareMathOperator{\diag}{diag}
+
+
+\makeatletter
+\newcommand{\hathat}[1]{% 
+\begingroup%
+  \let\macc@kerna\z@%
+  \let\macc@kernb\z@%
+  \let\macc@nucleus\@empty%
+  \hat{\raisebox{.2ex}{\vphantom{\ensuremath{#1}}}\smash{\hat{#1}}}%
+\endgroup%
+}
+\makeatother
+
