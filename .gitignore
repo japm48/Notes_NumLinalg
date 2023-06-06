@@ -1,0 +1,7 @@
+
+.texlive*/
+_minted-main/
+main*
+!main.tex
+*.fls
+
